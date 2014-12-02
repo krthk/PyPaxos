@@ -5,12 +5,12 @@ import socket
 import threading
 
 
-class Server(object):
+class Node(object):
     
     #Class "constructor"
     def __init__(self):
-        self.host = ''
-        self.port = 55555
+        self.listenHost = ''
+        self.listenPort = 55555
         self.bufferSize = 1024
         self.socket = None
         
@@ -18,10 +18,10 @@ class Server(object):
     
     
     #Networking setup
-    def listen(self):
+    def setup(self):
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.socket.bind((self.host, self.port))
+            self.socket.bind((self.listenHost, self.listenPort))
         
         except socket.error, (value, message):
             if self.socket:
@@ -37,6 +37,12 @@ class Server(object):
                 print "Received data:", data
     
     
+    #Send to some server
+    def send(self, message, ip, port):
+        if self.isRunning:
+            self.socket.sendto(message, (ip, port))
+
+
     #Stop all network activity
     def fail(self):
         if not self.isRunning:

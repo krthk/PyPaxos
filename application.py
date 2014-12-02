@@ -4,8 +4,7 @@ import sys
 import threading
 import helper
 from account import Account
-from server import Server
-from client import Client
+from node import Node
 
 
 #Get the arguments
@@ -16,19 +15,15 @@ if len(sys.argv) != 1:
     sys.exit(0)
 
 
-#Create Server object
-server = Server()
-
-#Create Client object
-client = Client()
-client.setup()
+#Create Node object
+node = Node()
 
 #Create Account object
 account = Account()
 
 #Threaded networking process
 def setupServer():
-    server.listen()
+    server.setup()
 
 #Start the background networking
 thread = threading.Thread(target=setupServer, args = ())
@@ -87,7 +82,7 @@ while True:
                 account.deposit(amount)
                 
                 message = "Deposited $%.2f" % amount
-                client.send(message, "127.0.0.1", 55555)
+                node.send(message, "127.0.0.1", 55555)
 
             elif args[0] == "withdraw":
                 account.withdraw(amount)
