@@ -13,30 +13,36 @@ class Server(object):
         self.host = ''
         self.port = 55555
         self.bufferSize = 1024
-        self.server = None
+        self.socket = None
         
         self.isRunning = True
     
     
     #Networking setup
-    def listen(self):
-        try:
-            self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.server.bind((self.host, self.port))
+    def listen(self, port):
+        self.port = port
         
-        except socket.error, (value,message):
-            if self.server:
-                self.server.close()
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.socket.bind((self.host, self.port))
+        
+        except socket.error, (value, message):
+            if self.socket:
+                self.socket.close()
             
             print "Could not open socket: " + message
             sys.exit(1)
 
         while True:
-            data, addr = self.server.recvfrom(self.bufferSize)
+            data, addr = self.socket.recvfrom(self.bufferSize)
             
             if self.isRunning:
                 print "Received data:", data
 
+
+    #Send to some server
+    def send(self, message, ip, port):
+        self.socket.sendto(message, (ip, port))
     
     #Stop all network activity
     def fail(self):

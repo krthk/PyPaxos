@@ -7,26 +7,29 @@ from account import Account
 from server import Server
 
 
-#Threaded networking process
-def setupServer():
-    server = Server()
-    server.listen()
-
-
-#Start the background networking
-thread = threading.Thread(target=setupServer, args = ())
-thread.daemon = True
-thread.start()
-
 #Get the arguments
-if len(sys.argv) != 1:
+if len(sys.argv) != 2:
     print ""
-    print "Usage: %s" % str(sys.argv[0])
+    print "Usage: %s <port>" % str(sys.argv[0])
     print ""
     sys.exit(0)
 
+
+#Create Server object
+server = Server()
+
 #Create Account object
 account = Account()
+
+#Threaded networking process
+def setupServer(port):
+    server.listen(port)
+
+#Start the background networking
+port = int(sys.argv[1])
+thread = threading.Thread(target=setupServer, args = (port,))
+thread.daemon = True
+thread.start()
 
 
 #Main loop of application
