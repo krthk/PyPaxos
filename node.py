@@ -2,7 +2,6 @@
 
 import sys
 import socket
-import threading
 
 
 class Node(object):
@@ -29,13 +28,17 @@ class Node(object):
             
             print "Could not open socket: " + message
             sys.exit(1)
+        
+        self.listen()
 
+
+    #Listen to the network
+    def listen(self):
         while True:
-            data, addr = self.socket.recvfrom(self.bufferSize)
-            
             if self.isRunning:
+                data, addr = self.socket.recvfrom(self.bufferSize)
                 print "Received data:", data
-    
+
     
     #Send to some server
     def send(self, message, ip, port):
