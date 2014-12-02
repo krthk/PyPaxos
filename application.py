@@ -4,7 +4,19 @@ import sys
 import threading
 import helper
 from account import Account
+from server import Server
 
+
+#Threaded networking process
+def setupServer():
+    server = Server()
+    server.listen()
+
+
+#Start the background networking
+thread = threading.Thread(target=setupServer, args = ())
+thread.daemon = True
+thread.start()
 
 #Get the arguments
 if len(sys.argv) != 1:
@@ -72,6 +84,7 @@ while True:
     
         else:
             print "Invalid amount"
+
 
 
 
