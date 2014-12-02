@@ -3,7 +3,6 @@
 import sys
 import socket
 import threading
-import time
 
 
 class Server(object):
@@ -19,9 +18,7 @@ class Server(object):
     
     
     #Networking setup
-    def listen(self, port):
-        self.port = port
-        
+    def listen(self):
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.socket.bind((self.host, self.port))
@@ -38,11 +35,7 @@ class Server(object):
             
             if self.isRunning:
                 print "Received data:", data
-
-
-    #Send to some server
-    def send(self, message, ip, port):
-        self.socket.sendto(message, (ip, port))
+    
     
     #Stop all network activity
     def fail(self):

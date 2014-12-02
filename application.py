@@ -5,10 +5,11 @@ import threading
 import helper
 from account import Account
 from server import Server
+from client import Client
 
 
 #Get the arguments
-if len(sys.argv) != 2:
+if len(sys.argv) != 1:
     print ""
     print "Usage: %s <port>" % str(sys.argv[0])
     print ""
@@ -18,16 +19,19 @@ if len(sys.argv) != 2:
 #Create Server object
 server = Server()
 
+#Create Client object
+client = Client()
+client.setup()
+
 #Create Account object
 account = Account()
 
 #Threaded networking process
-def setupServer(port):
-    server.listen(port)
+def setupServer():
+    server.listen()
 
 #Start the background networking
-port = int(sys.argv[1])
-thread = threading.Thread(target=setupServer, args = (port,))
+thread = threading.Thread(target=setupServer, args = ())
 thread.daemon = True
 thread.start()
 
@@ -81,6 +85,9 @@ while True:
             
             if args[0] == "deposit":
                 account.deposit(amount)
+                
+                message = "Deposited $%.2f" % amount
+                client.send(message, "127.0.0.1", 55555)
 
             elif args[0] == "withdraw":
                 account.withdraw(amount)
