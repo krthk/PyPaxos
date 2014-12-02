@@ -12,8 +12,7 @@ class Server(object):
     def __init__(self):
         self.host = ''
         self.port = 55555
-        self.size = 1024
-        self.backlog = 5
+        self.bufferSize = 1024
         self.server = None
         self.threads = []
         
@@ -37,9 +36,8 @@ class Server(object):
     #Handle opening server socket
     def open_socket(self):
         try:
-            self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.server.bind((self.host,self.port))
-            self.server.listen(self.backlog)
         
         except socket.error, (value,message):
             if self.server:
@@ -47,6 +45,10 @@ class Server(object):
             
             print "Could not open socket: " + message
             sys.exit(1)
+
+        while True:
+            data, addr = sock.recvfrom(self.bufferSize)
+            print "received message:", data
 
 
     #Threaded handler for clients
