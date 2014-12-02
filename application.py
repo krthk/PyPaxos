@@ -22,11 +22,11 @@ node = Node()
 account = Account()
 
 #Threaded networking process
-def setupServer():
-    server.setup()
+def setupNode():
+    node.setup()
 
 #Start the background networking
-thread = threading.Thread(target=setupServer, args = ())
+thread = threading.Thread(target=setupNode, args = ())
 thread.daemon = True
 thread.start()
 
