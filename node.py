@@ -2,6 +2,7 @@
 
 import sys
 import socket
+import pickle
 from paxos.round import Round
 
 
@@ -24,7 +25,7 @@ class Node(object):
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.socket.bind((self.localIP, self.localPort))
         
-        except socket.error, (value, message):
+        except self.socket.error, (value, message):
             if self.socket:
                 self.socket.close()
             
@@ -43,7 +44,7 @@ class Node(object):
             if self.isRunning:
                 data, addr = self.socket.recvfrom(self.bufferSize)
                 message = pickle.loads(data)
-                print "Received message:", message
+                print "Received message with type:", message.messageType
 
 
     #Stop all network activity

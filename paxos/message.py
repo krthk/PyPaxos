@@ -3,7 +3,7 @@
 from ballot import Ballot
 
 class Message(object):
-    PROPOSE, PROMISE, ACCEPT, ACCEPTED = range(4)
+    PROPOSE, PREPARE, PROMISE, ACCEPT, ACCEPTED = range(5)
     
     #Class "constructor"
     def __init__(self, messageType, ballot):

@@ -2,6 +2,7 @@
 
 import socket
 import threading
+import pickle
 from message import Message
 from paxos.ballot import Ballot
 
@@ -19,26 +20,14 @@ class Round(threading.Thread):
     
     #Called by starting the thread
     def run(self):
-        self.setup()
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.propose()
     
-    #Networking setup
-    def setup(self):
-        try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        
-        except socket.error, (value, message):
-            if self.socket:
-                self.socket.close()
-            
-            print "Could not open socket: " + message
-            sys.exit(1)
-
 
     #Send to some server
     def send(self, message, ip, port):
-        if self.isRunning:
-            data = pickle.dumps(message)
-            self.socket.sendto(data, (ip, port))
+        data = pickle.dumps(message)
+        self.socket.sendto(data, (ip, port))
 
 
     #Begin "Propose" phase
