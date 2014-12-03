@@ -2,20 +2,24 @@
 
 import socket
 import threading
-from message import MessageType
 from message import Message
+from paxos.ballot import Ballot
 
 
 class Round(threading.Thread):
     
     #Class "constructor"
-    def __init__(self):
+    def __init__(self, ip, port):
         threading.Thread.__init__(self)
-        self.localIP = ''
-        self.localPort = 55555
+        self.localIP = ip
+        self.localPort = port
         self.socket = None
         self.ballot = Ballot(self.localIP, self.localPort)
     
+    
+    #Called by starting the thread
+    def run(self):
+        self.setup()
     
     #Networking setup
     def setup(self):
@@ -38,8 +42,8 @@ class Round(threading.Thread):
 
 
     #Begin "Propose" phase
-    def propose(self, messageType):
-        message = Message(MessageType.Propose, self.ballot)
+    def propose(self):
+        message = Message(Message.PROPOSE, self.ballot)
         
         #CHANGE THIS TO SEND TO NETWORK
         self.send(message, self.localIP, self.localPort)

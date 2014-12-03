@@ -2,11 +2,8 @@
 
 from ballot import Ballot
 
-class MessageType(Enum):
-    PROPOSE, PROMISE, ACCEPT, ACCEPTED = range(4)
-
-
 class Message(object):
+    PROPOSE, PROMISE, ACCEPT, ACCEPTED = range(4)
     
     #Class "constructor"
     def __init__(self, messageType, ballot):

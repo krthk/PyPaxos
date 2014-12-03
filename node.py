@@ -68,8 +68,8 @@ class Node(object):
 
     #Create a new paxos round
     def createPaxosRound(self):
-        round = Round()
-        round.setup()
+        round = Round(self.localIP, self.localPort)
+        round.start()
         self.paxosRounds.append(round)
 
 
