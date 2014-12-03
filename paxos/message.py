@@ -1,16 +1,17 @@
 #!/usr/bin/python
+
+from ballot import Ballot
+
 class MessageType(Enum):
     PROPOSE, PROMISE, ACCEPT, ACCEPTED = range(4)
 
 
 class Message(object):
     messageType = None
-    proposalNumber = 0
-    value = 0
+    ballot = None
     
     #Class "constructor"
-    def __init__(self, messageType, proposalNumber, value):
+    def __init__(self, messageType, ballot):
         self.messageType = messageType
-        self.proposalNumber = proposalNumber
-        self.value = value
+        self.ballot = ballot
 

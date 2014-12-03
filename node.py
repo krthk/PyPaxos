@@ -12,7 +12,6 @@ class Node(object):
         self.listenPort = 55555
         self.bufferSize = 1024
         self.socket = None
-        
         self.isRunning = True
     
     
@@ -39,13 +38,8 @@ class Node(object):
         while True:
             if self.isRunning:
                 data, addr = self.socket.recvfrom(self.bufferSize)
-                print "Received data:", data
-
-    
-    #Send to some server
-    def send(self, message, ip, port):
-        if self.isRunning:
-            self.socket.sendto(message, (ip, port))
+                message = pickle.loads(data)
+                print "Received message:", message
 
 
     #Stop all network activity
