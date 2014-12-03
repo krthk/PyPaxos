@@ -29,6 +29,7 @@ class Node(object):
             print "Could not open socket: " + message
             sys.exit(1)
         
+        print "\nRunning at: " + socket.gethostbyname(socket.gethostname()) + ":" + str(self.listenPort)
         self.listen()
 
 

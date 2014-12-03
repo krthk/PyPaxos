@@ -2,6 +2,7 @@
 
 import sys
 import threading
+import time
 import helper
 from account import Account
 from node import Node
@@ -29,6 +30,10 @@ def setupNode():
 thread = threading.Thread(target=setupNode, args = ())
 thread.daemon = True
 thread.start()
+
+#Wait a moment for the node to get setup
+time.sleep(1)
+
 
 
 #Main loop of application
@@ -66,10 +71,10 @@ while True:
             account.getBalance()
 
         elif args[0] == "fail":
-            print "IMPLEMENT"
+            node.fail()
                 
         elif args[0] == "unfail":
-            print "IMPLEMENT"
+            node.unfail()
             
     elif len(args) == 2:
         args[0] = args[0].lower()
