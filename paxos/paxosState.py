@@ -73,6 +73,6 @@ class PaxosState(object):
         message = Message(Message.PROPOSE, self.ballot, self.round)
         
         #CHANGE THIS TO SEND TO NETWORK
-        self.send(message, self.localIP, self.localPort)
+        self.send(message, "54.165.163.23", self.localPort)
 
         self.stage = PaxosStage.SENT_PROPOSAL
