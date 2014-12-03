@@ -21,6 +21,7 @@ account = Account()
 
 #Create Node object
 node = Node()
+node.daemon = True
 node.start()
 
 #Wait a moment for the node to get its socket set up

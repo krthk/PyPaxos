@@ -7,10 +7,10 @@ from paxos.ballot import Ballot
 
 
 class PaxosRole:
-    SENT_PROPOSAL, LEARNER, ACCEPTOR = range(3)
+    PROPOSER, LEARNER, ACCEPTOR = range(3)
 
 class PaxosStage:
-    PROPOSER, LEARNER, ACCEPTOR = range(3)
+    SENT_PROPOSAL, SENT_PROMISE, SENT_ACCEPT = range(3)
 
 class PaxosState(object):
     PROPOSE, PREPARE, PROMISE, ACCEPT, ACCEPTED = range(5)
@@ -21,6 +21,7 @@ class PaxosState(object):
         self.localPort = port
         self.socket = None
         
+        self.round = 0
         self.role = None
         self.stage = None
         
@@ -38,12 +39,40 @@ class PaxosState(object):
     #Send to some server
     def send(self, message, ip, port):
         data = pickle.dumps(message)
-        self.socket.sendto(data, (ip, port))
+        
+        try:
+            self.socket.sendto(data, (ip, port))
+        
+        except Exception as e:
+            print e
+
+
+    #Handle an incoming message
+    def handleMessage(self, message):
+        print "Received message with type:", message.messageType
+    
+        if message.messageType == Message.PROPOSE:
+            print "0"
+
+        elif message.messageType == Message.PREPARE:
+            print "1"
+    
+        elif message.messageType == Message.PROMISE:
+            print "2"
+
+        elif message.messageType == Message.ACCEPT:
+            print "3"
+
+        elif message.messageType == Message.ACCEPTED:
+            print "4"
 
 
     #Begin "Propose" phase
     def propose(self):
-        message = Message(Message.PROPOSE, self.ballot)
+        self.role = PaxosRole.PROPOSER
+        message = Message(Message.PROPOSE, self.ballot, self.round)
         
         #CHANGE THIS TO SEND TO NETWORK
         self.send(message, self.localIP, self.localPort)
+
+        self.stage = PaxosStage.SENT_PROPOSAL

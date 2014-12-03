@@ -46,8 +46,17 @@ class Node(threading.Thread):
         while True:
             if self.isRunning:
                 data, addr = self.socket.recvfrom(self.bufferSize)
-                message = pickle.loads(data)
-                print "Received message with type:", message.messageType
+                
+                if data:
+                    try:
+                        message = pickle.loads(data)
+
+                        roundData = self.paxosRounds[message.round]
+                        roundData.handleMessage(message)
+                        
+                
+                    except Exception as e:
+                        print e
 
 
     #Stop all network activity
@@ -72,8 +81,8 @@ class Node(threading.Thread):
 
     #Create a new paxos round
     def createPaxosRound(self):
-        round = PaxosState(self.localIP, self.localPort)
-        self.paxosRounds[self.currentRound] = round
+        roundData = PaxosState(self.localIP, self.localPort)
+        self.paxosRounds[self.currentRound] = roundData
 
         self.currentRound += 1
 
