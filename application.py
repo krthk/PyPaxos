@@ -86,8 +86,7 @@ while True:
             if args[0] == "deposit":
                 account.deposit(amount)
                 
-                message = "Deposited $%.2f" % amount
-                node.send(message, "127.0.0.1", 55555)
+                node.createPaxosRound()
 
             elif args[0] == "withdraw":
                 account.withdraw(amount)

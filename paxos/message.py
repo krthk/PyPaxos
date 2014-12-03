@@ -7,8 +7,6 @@ class MessageType(Enum):
 
 
 class Message(object):
-    messageType = None
-    ballot = None
     
     #Class "constructor"
     def __init__(self, messageType, ballot):

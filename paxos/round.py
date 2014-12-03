@@ -34,7 +34,7 @@ class Round(threading.Thread):
     def send(self, message, ip, port):
         if self.isRunning:
             data = pickle.dumps(message)
-                self.socket.sendto(data, (ip, port))
+            self.socket.sendto(data, (ip, port))
 
 
     #Begin "Propose" phase

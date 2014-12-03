@@ -2,24 +2,27 @@
 
 import sys
 import socket
+from paxos.round import Round
 
 
 class Node(object):
     
     #Class "constructor"
     def __init__(self):
-        self.listenHost = ''
-        self.listenPort = 55555
+        self.localIP = ''
+        self.localPort = 55555
         self.bufferSize = 1024
         self.socket = None
         self.isRunning = True
+    
+        self.paxosRounds = []
     
     
     #Networking setup
     def setup(self):
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.socket.bind((self.listenHost, self.listenPort))
+            self.socket.bind((self.localIP, self.localPort))
         
         except socket.error, (value, message):
             if self.socket:
@@ -28,8 +31,9 @@ class Node(object):
             print "Could not open socket: " + message
             sys.exit(1)
 
+        self.localIP = socket.gethostbyname(socket.gethostname())
+        print "\nRunning at: " + self.localIP + ":" + str(self.localPort)
         
-        print "\nRunning at: " + socket.gethostbyname(socket.gethostname()) + ":" + str(self.listenPort)
         self.listen()
 
 
@@ -60,6 +64,13 @@ class Node(object):
         else:
             self.isRunning = True
             print "Resuming activity"
+
+
+    #Create a new paxos round
+    def createPaxosRound(self):
+        round = Round()
+        round.setup()
+        self.paxosRounds.append(round)
 
 
 
