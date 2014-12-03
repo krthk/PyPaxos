@@ -1,6 +1,4 @@
 #!/usr/bin/python
-
-
 class MessageType(Enum):
     PROPOSE, PROMISE, ACCEPT, ACCEPTED = range(4)
 
