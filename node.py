@@ -2,25 +2,28 @@
 
 import sys
 import socket
+import threading
 import pickle
-from paxos.round import Round
+from paxos.paxosState import PaxosState
 
 
-class Node(object):
+class Node(threading.Thread):
     
     #Class "constructor"
     def __init__(self):
+        threading.Thread.__init__(self)
         self.localIP = ''
         self.localPort = 55555
         self.bufferSize = 1024
         self.socket = None
         self.isRunning = True
     
-        self.paxosRounds = []
+        self.currentRound = 0
+        self.paxosRounds = {}
     
     
-    #Networking setup
-    def setup(self):
+    #Called when thread is started
+    def run(self):
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.socket.bind((self.localIP, self.localPort))
@@ -69,9 +72,10 @@ class Node(object):
 
     #Create a new paxos round
     def createPaxosRound(self):
-        round = Round(self.localIP, self.localPort)
-        round.start()
-        self.paxosRounds.append(round)
+        round = PaxosState(self.localIP, self.localPort)
+        self.paxosRounds[self.currentRound] = round
+
+        self.currentRound += 1
 
 
 

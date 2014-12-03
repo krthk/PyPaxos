@@ -16,22 +16,14 @@ if len(sys.argv) != 1:
     sys.exit(0)
 
 
-#Create Node object
-node = Node()
-
 #Create Account object
 account = Account()
 
-#Threaded networking process
-def setupNode():
-    node.setup()
+#Create Node object
+node = Node()
+node.start()
 
-#Start the background networking
-thread = threading.Thread(target=setupNode, args = ())
-thread.daemon = True
-thread.start()
-
-#Wait a moment for the node to get setup
+#Wait a moment for the node to get its socket set up
 time.sleep(1)
 
 
