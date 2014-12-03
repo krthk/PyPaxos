@@ -28,8 +28,15 @@ class Node(object):
             
             print "Could not open socket: " + message
             sys.exit(1)
+
+
+        #Print out ip:port
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("gmail.com", 80))
+        print "\nRunning at: " + s.getsockname()[0] + ":" + str(self.listenPort)
+        s.close()
         
-        print "\nRunning at: " + socket.gethostbyname(socket.gethostname()) + ":" + str(self.listenPort)
+        #Start listening on the network
         self.listen()
 
 
