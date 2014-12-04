@@ -77,7 +77,7 @@ class Node(threading.Thread):
                 # Respond to the proposer with a promise not to accept any lower ballots
                 if msg.ballot >= state.highestBallot:
                     promise_msg = Message(msg.round, 
-                                          Message.ACCEPTOR_ACCEPT, 
+                                          Message.ACCEPTOR_PROMISE, 
                                           self.addr,
                                           state.highestBallot, 
                                           state.value)
@@ -102,14 +102,14 @@ class Node(threading.Thread):
             else:
                 # Respond to the proposer with a promise not to accept any lower ballots
                 promise_msg = Message(msg.round, 
-                                      Message.ACCEPTOR_ACCEPT,
+                                      Message.ACCEPTOR_PROMISE,
                                       self.addr)
                 print '2Sending promise to', msg.source
                 self.sendMessage(promise_msg, msg.source)
                 
                 # Update the state corresponding to the current round
                 self.paxosStates[r] = PaxosState(r, PaxosRole.ACCEPTOR, 
-                                                 PaxosState.ACCEPTOR_SENT_PROMISE, 
+                                                 PaxosState.ACCEPTOR_SENT_PROMISE,  
                                                  msg.ballot, 
                                                  msg.value)
 
