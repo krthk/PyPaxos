@@ -16,10 +16,12 @@ class PaxosState(object):
     PROPOSE, PREPARE, PROMISE, ACCEPT, ACCEPTED = range(5)
     
     #Class "constructor"
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, otherServers):
         self.localIP = ip
         self.localPort = port
         self.socket = None
+        
+        self.otherServers = otherServers
         
         self.round = 0
         self.role = None
@@ -72,7 +74,7 @@ class PaxosState(object):
         self.role = PaxosRole.PROPOSER
         message = Message(Message.PROPOSE, self.ballot, self.round)
         
-        #CHANGE THIS TO SEND TO NETWORK
-        self.send(message, self.localIP, self.localPort)
+        for server in self.otherServers:
+            self.send(message, server, self.localPort)
 
         self.stage = PaxosStage.SENT_PROPOSAL

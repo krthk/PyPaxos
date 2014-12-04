@@ -17,6 +17,8 @@ class Node(threading.Thread):
         self.bufferSize = 1024
         self.socket = None
         self.isRunning = True
+        
+        self.otherServers = []
     
         self.currentRound = 0
         self.paxosRounds = {}
@@ -24,15 +26,19 @@ class Node(threading.Thread):
     
     #Called when thread is started
     def run(self):
+        #Get list of other servers
+        self.otherServers = open("config").read().splitlines()
+        
+        #Setup socket
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.socket.bind((self.localIP, self.localPort))
         
-        except self.socket.error, (value, message):
+        except Exception as e:
             if self.socket:
                 self.socket.close()
             
-            print "Could not open socket: " + message
+            print "Could not open socket: " + e.message
             sys.exit(1)
 
         self.localIP = socket.gethostbyname(socket.gethostname())
@@ -81,7 +87,7 @@ class Node(threading.Thread):
 
     #Create a new paxos round
     def createPaxosRound(self):
-        roundData = PaxosState(self.localIP, self.localPort)
+        roundData = PaxosState(self.localIP, self.localPort, self.otherServers)
         self.paxosRounds[self.currentRound] = roundData
 
         self.currentRound += 1
