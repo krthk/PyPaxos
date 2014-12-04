@@ -27,7 +27,7 @@ class MessagePump(threading.Thread):
         self.isRunning = True
     
     def run(self):
-	print 'Starting message pump and listerning to port ', self.port
+        print 'Starting message pump and listerning to port ', self.port
 
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

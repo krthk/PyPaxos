@@ -18,6 +18,7 @@ class Node(threading.Thread):
         
         self.port = 55555
         self.otherServers = open("config").read().splitlines()
+        print self.otherServers
     
         self.currentRound = 0
         self.paxosRounds = {}
