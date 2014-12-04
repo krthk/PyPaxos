@@ -1,7 +1,6 @@
 '''
 Created on Dec 3, 2014
-
-@author: karthik
+@author: Karthik Puthraya
 '''
 
 class Ballot():
@@ -68,11 +67,11 @@ class Ballot():
         return '<{0}, {1}>'.format(self.n, self.nodeIdentifier)
         
 if __name__ == '__main__':
-    b = Ballot("127.0.0.1", 5555)
+    b = Ballot('127.0.0.1', 5555)
     print b
-    b3 = Ballot("127.0.0.1", 5557)
+    b3 = Ballot('127.0.0.1', 5557)
     print b3
-    b2 = Ballot("169.231.142.95", 5555)
+    b2 = Ballot('169.231.142.95', 5555)
     print b.n, b.nodeIdentifier
     print b < b3 
     b.increment()

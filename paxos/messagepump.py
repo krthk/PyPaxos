@@ -1,7 +1,8 @@
 '''
 Created on Dec 3, 2014
-@author: karthik
+@author: Karthik Puthraya
 '''
+
 import threading
 import Queue
 import sys
@@ -14,7 +15,7 @@ class MessagePump(threading.Thread):
     the main thread.
     '''
     
-    def __init__(self, queue, owner = None, port = 55555):
+    def __init__(self, queue, msgReceived, owner = None, port = 55555):
         '''
         The MessagePump binds itself to port and appends all the messages it receives
         to a queue
@@ -23,11 +24,12 @@ class MessagePump(threading.Thread):
         self.owner = owner
         self.port = port
         self.queue = queue
+        self.msgReceived = msgReceived
         self.socket = None
         self.isRunning = True
     
     def run(self):
-        print 'Starting message pump and listerning to port ', self.port
+        print 'Starting message pump and listening to port', self.port
 
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -48,19 +50,25 @@ class MessagePump(threading.Thread):
         while True:
             if self.isRunning:
                 data, addr = self.socket.recvfrom(2048)
-                self.queue.put(data)
-                print 'Received from ', addr
+                self.queue.put((data, addr))
+#                 print 'Received from ', addr
+                self.msgReceived.set()
     
 if __name__ == '__main__':
     queue = Queue.Queue()
-    mp = MessagePump(queue)
+    msgReceived = threading.Event()
+    msgReceived.clear()
+    
+    mp = MessagePump(queue, msgReceived)
     mp.setDaemon(True)
     mp.start()
     
     while True:
+        msgReceived.wait()
         if not queue.empty():
-            data = queue.get()
-            print data
-        time.sleep(5)
+            data, addr = queue.get()
+            print addr, data
+        msgReceived.clear()
+#         time.sleep(5)
         
     
