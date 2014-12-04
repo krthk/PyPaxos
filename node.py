@@ -40,6 +40,7 @@ class Node(threading.Thread):
             if not self.queue.empty():
                 try:
                     data = self.queue.get()
+                    print "RECV", data
                     message = pickle.loads(data)
                         
                     roundData = self.paxosRounds[message.round]

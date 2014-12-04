@@ -46,7 +46,6 @@ class MessagePump(threading.Thread):
         while True:
             if self.isRunning:
                 data, addr = self.socket.recvfrom(2048)
-                print "RECV", data
                 
                 if data:
                     self.queue.put(data)
