@@ -27,14 +27,20 @@ class Ballot():
             self.n += 1
 
     def __lt__(self, other):
-        if self.n < other.n : return True
-        elif self.n == other.n: return self.nodeIdentifier < other.nodeIdentifier
-        else: return False
+        if self.n < other.n : 
+            return True
+        elif self.n == other.n: 
+            return self.nodeIdentifier < other.nodeIdentifier
+        else: 
+            return False
 
     def __le__(self, other):
-        if self.n < other.n : return True
-        elif self.n == other.n: return self.nodeIdentifier <= other.nodeIdentifier
-        else: return False
+        if self.n < other.n : 
+            return True
+        elif self.n == other.n: 
+            return self.nodeIdentifier <= other.nodeIdentifier
+        else: 
+            return False
 
     def __eq__(self, other):
         return self.n == other.n and self.nodeIdentifier == other.nodeIdentifier
@@ -43,17 +49,23 @@ class Ballot():
         return not self == other
 
     def __gt__(self, other):
-        if self.n > other.n : return True
-        elif self.n == other.n: return self.nodeIdentifier > other.nodeIdentifier
-        else: return False
+        if self.n > other.n : 
+            return True
+        elif self.n == other.n: 
+            return self.nodeIdentifier > other.nodeIdentifier
+        else: 
+            return False
     
     def __ge__(self, other):
-        if self.n > other.n : return True
-        elif self.n == other.n: return self.nodeIdentifier >= other.nodeIdentifier
-        else: return False    
+        if self.n > other.n : 
+            return True
+        elif self.n == other.n: 
+            return self.nodeIdentifier >= other.nodeIdentifier
+        else: 
+            return False    
             
     def __str__(self):
-            return '<{0}, {1}>'.format(self.n, self.nodeIdentifier)
+        return '<{0}, {1}>'.format(self.n, self.nodeIdentifier)
         
 if __name__ == '__main__':
     b = Ballot("127.0.0.1", 5555)
