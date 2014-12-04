@@ -26,3 +26,17 @@ class PaxosState(object):
         self.highestBallot = highestBallot
         self.value = value
         self.responses = None
+
+    def __str__(self):
+        return ('Round:          {0}\n'
+                'Role:           {1}\n' 
+                'Stage:          {2}\n'
+                'Highest Ballot: {3}\n'
+                'Value:          {4}\n'
+                'Responses:      {5}\n'.format(self.round, 
+                                               self.role, 
+                                               self.stage, 
+                                               self.highestBallot,
+                                               self.value, 
+                                               self.responses))
+                        

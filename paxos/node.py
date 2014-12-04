@@ -55,12 +55,7 @@ class Node(threading.Thread):
                 print 'Received on ', self.addr
                 try:
                     msg = pickle.loads(data)
-                    print 'From:    ', msg.source
-                    print 'Round:   ', msg.round
-                    print 'Ballot:  ', msg.ballot
-                    print 'Type:    ', msg.messageType
-                    print 'Value    ', msg.value
-                    print 
+                    print msg
                     self.processMessage(msg, addr)
                 except Exception as e:
                     print data
@@ -80,7 +75,7 @@ class Node(threading.Thread):
                 state = self.paxosStates[r]
                 
                 # Respond to the proposer with a promise not to accept any lower ballots
-                if msg.ballot > state.highestBallot:
+                if msg.ballot >= state.highestBallot:
                     promise_msg = Message(msg.round, 
                                           Message.ACCEPTOR_ACCEPT, 
                                           self.addr,
@@ -94,6 +89,14 @@ class Node(threading.Thread):
                                                      PaxosState.ACCEPTOR_SENT_PROMISE, 
                                                      msg.ballot, 
                                                      msg.value)
+                
+                # Send a NACK message if we have already promised to a higher ballot
+                else:
+                    nack_msg = Message(msg.round, 
+                                       Message.ACCEPTOR_NACK, 
+                                       self.addr,
+                                       state.highestBallot, 
+                                       state.value)
             
             # We haven't touched this round yet. So, accept the proposal and send a promise 
             else:
@@ -124,13 +127,20 @@ class Node(threading.Thread):
                 # Add code to check the last value and send a accept
                 # to majority of servers
                 pass
+        
+        elif msg.messageType == Message.ACCEPTOR_NACK:
+            # If we receive a NACK message from any of the servers, abandon this round
+            # because we are never going to succeed with the current ballot number
+            
+            # Add code to implement the above
+            pass
                 
         
     # Serialize and send the given message msg to the given address addr
     def sendMessage(self, msg, addr):
+        print self.addr, 'sent message to', addr
         data = pickle.dumps(msg)
         self.socket.sendto(data, addr)
-        print self.addr, 'sent message to', addr
     
     #Stop all network activity
     def fail(self):
@@ -157,10 +167,24 @@ if __name__ == '__main__':
     n2 = Node('127.0.0.1', 55556)
     n2.start()
     
-    time.sleep(3)
+    time.sleep(2)
     b = Ballot('127.0.0.1', 55556)
     msg = Message(0, Message.PROPOSER_PREPARE, n2.addr, b)
     n2.sendMessage(msg, ('127.0.0.1', 55555))
+    time.sleep(2)
+    
+    print n.paxosStates[0]
+    print n2.paxosStates
+
+    n3 = Node('127.0.0.1', 55557)
+    n3.start()
+    time.sleep(2)
+    b2 = Ballot('127.0.0.1', 55557)
+    msg = Message(0, Message.PROPOSER_PREPARE, n3.addr, b2)
+    n3.sendMessage(msg, ('127.0.0.1', 55555))
+    time.sleep(2)
+    print n.paxosStates[0]
+
 #     time.sleep(3)
 #     b.increment()
 #     msg = Message(0, Message.ACCEPTOR_ACCEPT, n2.addr, b)

@@ -19,3 +19,15 @@ class Message():
         self.source = source
         self.ballot = ballot
         self.value = value
+    
+    def __str__(self):
+        return ('From:    {0}\n'
+                'Round:   {1}\n' 
+                'Ballot:  {2}\n'
+                'Type:    {3}\n'
+                'Value    {4}\n'.format(self.source, 
+                                        self.round, 
+                                        self.ballot, 
+                                        self.messageType, 
+                                        self.value))
+                        
