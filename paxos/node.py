@@ -135,6 +135,8 @@ class Node(threading.Thread):
             # Add code to implement the above
             pass
                 
+        elif msg.messageType == Message.PROPOSER_ACCEPT:
+            pass
         
     # Serialize and send the given message msg to the given address addr
     def sendMessage(self, msg, addr):
