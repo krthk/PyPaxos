@@ -6,6 +6,8 @@ import threading
 import time
 import Queue
 import pickle
+import math
+import random
 from sets import Set
 from messagepump import MessagePump
 from paxosState import PaxosState
@@ -26,12 +28,16 @@ class Node(threading.Thread):
         self.serverSet = Set()
         for server in open('../config').read().splitlines():
             _ip, _port = server.split(':')
-            self.serverSet.add((_ip, int(_port)))
-#         print self.serverSet
+            
+            # Only add if it is not the local server
+            if _ip != self.addr[0] or int(_port) != self.addr[1]:
+                self.serverSet.add((_ip, int(_port)))
+        
         self.numServers = len(self.serverSet)
         
         # Compute the size of the majority quorum
-        self.quorumSize = int(self.numServers/2)+1
+        # Must add 1 to numServers because the local server is not in that set
+        self.quorumSize = int((self.numServers+1)/2)+1
         
         self.lastRound = -1
         self.paxosStates = {}
@@ -43,9 +49,9 @@ class Node(threading.Thread):
         self.messagePump = MessagePump(self.queue, self.msgReceived, owner = self, port = self.addr[1])
         self.messagePump.setDaemon(True)
     
-    #Called when thread is started
+    # Called when thread is started
     def run(self):
-        #Get list of other servers
+        # Get list of other servers
         self.messagePump.start()
         
         while True:
@@ -134,7 +140,12 @@ class Node(threading.Thread):
             
             # Add code to implement the above
             pass
-                
+
+
+    # Returns a list of servers that create a quorum
+    def getQuorum(self):
+        return random.sample(self.serverSet, self.quorumSize)
+
         
     # Serialize and send the given message msg to the given address addr
     def sendMessage(self, msg, addr):
@@ -142,7 +153,7 @@ class Node(threading.Thread):
         data = pickle.dumps(msg)
         self.socket.sendto(data, addr)
     
-    #Stop all network activity
+    # Stop all network activity
     def fail(self):
         if not self.messagePump.isRunning:
             print "Already failed"
@@ -151,7 +162,7 @@ class Node(threading.Thread):
             self.messagePump.isRunning = False
             print "Halting activity"
 
-    #Resume network activity
+    # Resume network activity
     def unfail(self):
         if self.messagePump.isRunning:
             print "Already running"

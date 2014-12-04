@@ -5,7 +5,7 @@ import threading
 import time
 import helper
 from account import Account
-from node import Node
+from paxos.node import Node
 
 
 #Get the arguments
