@@ -29,9 +29,6 @@ class PaxosState(object):
         
         self.ballot = Ballot(self.ip, self.port)
     
-        #TEST PROPOSE
-        self.propose()
-    
 
     #Send to some server
     def send(self, message, ip, port):
