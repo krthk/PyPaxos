@@ -6,7 +6,7 @@ import threading
 import time
 import Queue
 import pickle
-from paxos.messagePump import MessagePump
+from paxos.messagepump import MessagePump
 from paxos.paxosState import PaxosState
 
 
@@ -23,8 +23,8 @@ class Node(threading.Thread):
         self.currentRound = 0
         self.paxosRounds = {}
     
-        self.queue = None
-        self.messagePump = None
+        self.queue = Queue.Queue()
+        self.messagePump = MessagePump(None, self.port, self.queue)
     
     
     #Called when thread is started
@@ -32,8 +32,6 @@ class Node(threading.Thread):
         #Get list of other servers
         self.otherServers = open("config").read().splitlines()
         
-        self.queue = Queue.Queue()
-        self.messagePump = MessagePump(None, self.port, self.queue)
         self.messagePump.setDaemon(True)
         self.messagePump.start()
         
