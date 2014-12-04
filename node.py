@@ -17,22 +17,18 @@ class Node(threading.Thread):
         threading.Thread.__init__(self)
         
         self.port = 55555
-        
-        self.otherServers = []
+        self.otherServers = open("config").read().splitlines()
     
         self.currentRound = 0
         self.paxosRounds = {}
     
         self.queue = Queue.Queue()
-        self.messagePump = MessagePump(None, self.port, self.queue)
-    
+        self.messagePump = MessagePump(self.queue, self)
+        self.messagePump.setDaemon(True)
     
     #Called when thread is started
     def run(self):
         #Get list of other servers
-        self.otherServers = open("config").read().splitlines()
-        
-        self.messagePump.setDaemon(True)
         self.messagePump.start()
         
         while True:
@@ -42,8 +38,8 @@ class Node(threading.Thread):
                     print "RECV", data
                     message = pickle.loads(data)
                         
-                    roundData = self.paxosRounds[message.round]
-                    roundData.handleMessage(message)
+#                     roundData = self.paxosRounds[message.round]
+#                     roundData.handleMessage(message)
                     
                 except Exception as e:
                     print e
@@ -77,6 +73,7 @@ class Node(threading.Thread):
         self.paxosRounds[self.currentRound] = roundData
 
         self.currentRound += 1
+        roundData.propose()
 
 
 
