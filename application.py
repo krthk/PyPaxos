@@ -40,15 +40,15 @@ while True:
     
     if input == "help":
         print "\n------------------------------------------------\n"
-        print "balance"
+        print "(b)alance"
         print "  - Returns the current balance\n"
-        print "deposit <amount>"
+        print "(d)eposit <amount>"
         print "  - Increments the current balance by <amount>\n"
-        print "withdraw <amount>"
+        print "(w)ithdraw <amount>"
         print "  - Decrements the current balance by <amount>\n"
-        print "fail"
+        print "(f)ail"
         print "  - Simulates a node failure\n"
-        print "unfail"
+        print "(u)nfail"
         print "  - Starts node after fail was called\n"
         print "------------------------------------------------"
         continue
@@ -60,13 +60,13 @@ while True:
     if len(args) == 1:
         args[0] = args[0].lower()
         
-        if args[0] == "balance":
+        if args[0] == "b" or args[0] == "balance":
             account.getBalance()
 
-        elif args[0] == "fail":
+        elif args[0] == "f" or args[0] == "fail":
             node.fail()
                 
-        elif args[0] == "unfail":
+        elif args[0] == "u" or args[0] == "unfail":
             node.unfail()
             
     elif len(args) == 2:
@@ -76,12 +76,12 @@ while True:
         if helper.isNumber(args[1]):
             amount = float(args[1])
             
-            if args[0] == "deposit":
+            if args[0] == "d" or args[0] == "deposit":
                 account.deposit(amount)
                 
                 node.createPaxosRound()
 
-            elif args[0] == "withdraw":
+            elif args[0] == "w" or args[0] == "withdraw":
                 account.withdraw(amount)
     
         else:

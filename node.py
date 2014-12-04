@@ -3,7 +3,10 @@
 import sys
 import socket
 import threading
+import time
+import Queue
 import pickle
+from paxos.messagePump import MessagePump
 from paxos.paxosState import PaxosState
 
 
@@ -12,16 +15,16 @@ class Node(threading.Thread):
     #Class "constructor"
     def __init__(self):
         threading.Thread.__init__(self)
-        self.localIP = ''
-        self.localPort = 55555
-        self.bufferSize = 1024
-        self.socket = None
-        self.isRunning = True
+        
+        self.port = 55555
         
         self.otherServers = []
     
         self.currentRound = 0
         self.paxosRounds = {}
+    
+        self.queue = Queue.Queue()
+        self.messagePump = MessagePump(None, self.port, self.queue)
     
     
     #Called when thread is started
@@ -29,65 +32,48 @@ class Node(threading.Thread):
         #Get list of other servers
         self.otherServers = open("config").read().splitlines()
         
-        #Setup socket
-        try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.socket.bind((self.localIP, self.localPort))
         
-        except Exception as e:
-            if self.socket:
-                self.socket.close()
-            
-            print "Could not open socket: " + e.message
-            sys.exit(1)
-
-        self.localIP = socket.gethostbyname(socket.gethostname())
-        print "\nRunning at: " + self.localIP + ":" + str(self.localPort)
+        self.messagePump.setDaemon(True)
+        self.messagePump.start()
         
-        self.listen()
-
-
-    #Listen to the network
-    def listen(self):
         while True:
-            if self.isRunning:
-                data, addr = self.socket.recvfrom(self.bufferSize)
-                
-                if data:
-                    try:
-                        message = pickle.loads(data)
-
-                        roundData = self.paxosRounds[message.round]
-                        roundData.handleMessage(message)
+            if not self.queue.empty():
+                try:
+                    data = self.queue.get()
+                    message = pickle.loads(data)
                         
-                
-                    except Exception as e:
-                        print e
+                    roundData = self.paxosRounds[message.round]
+                    roundData.handleMessage(message)
+                    
+                except Exception as e:
+                    print e
+        
+            time.sleep(5)
 
 
     #Stop all network activity
     def fail(self):
-        if not self.isRunning:
+        if not self.messagePump.isRunning:
             print "Already failed"
         
         else:
-            self.isRunning = False
+            self.messagePump.isRunning = False
             print "Halting activity"
 
 
     #Resume network activity
     def unfail(self):
-        if self.isRunning:
+        if self.messagePump.isRunning:
             print "Already running"
         
         else:
-            self.isRunning = True
+            self.messagePump.isRunning = True
             print "Resuming activity"
 
 
     #Create a new paxos round
     def createPaxosRound(self):
-        roundData = PaxosState(self.localIP, self.localPort, self.otherServers)
+        roundData = PaxosState(self.port, self.otherServers)
         self.paxosRounds[self.currentRound] = roundData
 
         self.currentRound += 1
