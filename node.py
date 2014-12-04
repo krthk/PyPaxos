@@ -24,7 +24,7 @@ class Node(threading.Thread):
         self.paxosRounds = {}
     
         self.queue = Queue.Queue()
-        self.messagePump = MessagePump(None, self.port, self.queue)
+        self.messagePump = None
     
     
     #Called when thread is started
@@ -32,7 +32,7 @@ class Node(threading.Thread):
         #Get list of other servers
         self.otherServers = open("config").read().splitlines()
         
-        
+        self.messagePump = MessagePump(None, self.port, self.queue)
         self.messagePump.setDaemon(True)
         self.messagePump.start()
         

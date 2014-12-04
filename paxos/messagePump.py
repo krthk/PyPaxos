@@ -27,6 +27,8 @@ class MessagePump(threading.Thread):
         self.isRunning = True
     
     def run(self):
+	print "Starting message pump"
+
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.socket.bind(("localhost", self.port))
@@ -45,7 +47,5 @@ class MessagePump(threading.Thread):
         # Listen forever on the port and add received messages to the queue
         while True:
             if self.isRunning:
-                data, addr = self.socket.recvfrom(2048)
-                
-                if data:
-                    self.queue.put(data)
+                data, addr = self.socket.recvfrom(2048)                
+                self.queue.put(data)
