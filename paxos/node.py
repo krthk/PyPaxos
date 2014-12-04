@@ -140,13 +140,14 @@ class Node(threading.Thread):
             
             # Add code to implement the above
             pass
-
+                
+        elif msg.messageType == Message.PROPOSER_ACCEPT:
+            pass
 
     # Returns a list of servers that create a quorum
     def getQuorum(self):
         return random.sample(self.serverSet, self.quorumSize)
-
-        
+    
     # Serialize and send the given message msg to the given address addr
     def sendMessage(self, msg, addr):
         print self.addr, 'sent message to', addr
