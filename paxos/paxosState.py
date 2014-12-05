@@ -2,6 +2,7 @@
 
 import socket
 import pickle
+from sets import Set
 from message import Message
 from ballot import Ballot
 
@@ -25,7 +26,7 @@ class PaxosState(object):
         self.stage = stage
         self.highestBallot = highestBallot
         self.value = value
-        self.responses = None
+        self.responses = []
 
     def __str__(self):
         return ('Round:          {0}\n'

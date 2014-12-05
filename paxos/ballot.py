@@ -8,7 +8,7 @@ class Ballot():
     This is the ballot number for a given node
     '''
 
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, n = 0):
         '''
         Initiate the ballot with the IP address
         '''
@@ -19,7 +19,7 @@ class Ballot():
                 total += nums[-i-1]*(256**i)
             return total*100000 + port
         
-        self.n = 0
+        self.n = n
         self.nodeIdentifier = __ip_to_int(ip, port)
         
     def increment(self):

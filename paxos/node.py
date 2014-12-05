@@ -26,18 +26,18 @@ class Node(threading.Thread):
 
         # Read config and add the servers to the set
         self.serverSet = Set()
-        for server in open('../config').read().splitlines():
+        for server in open('config2').read().splitlines():
             _ip, _port = server.split(':')
             
             # Only add if it is not the local server
             if _ip != self.addr[0] or int(_port) != self.addr[1]:
                 self.serverSet.add((_ip, int(_port)))
         
-        self.numServers = len(self.serverSet)
+        # Number of servers in the system including self
+        self.numServers = len(self.serverSet) + 1
         
         # Compute the size of the majority quorum
-        # Must add 1 to numServers because the local server is not in that set
-        self.quorumSize = int((self.numServers+1)/2)+1
+        self.quorumSize = int(self.numServers/2)+1
         
         self.lastRound = -1
         self.paxosStates = {}
@@ -58,13 +58,12 @@ class Node(threading.Thread):
             self.msgReceived.wait()
             while not self.queue.empty():
                 data, addr = self.queue.get()
-                print 'Received on ', self.addr
                 try:
                     msg = pickle.loads(data)
-                    print msg
+                    print '{0}: Received\n{1}'.format(self.addr, msg)
                     self.processMessage(msg, addr)
                 except Exception as e:
-                    print data
+                    print '{0}: {1}'.format(self.addr, data)
                     print e
             self.msgReceived.clear()
 
@@ -87,7 +86,7 @@ class Node(threading.Thread):
                                           self.addr,
                                           state.highestBallot, 
                                           state.value)
-                    print '1Sending promise to', msg.source
+                    print '{0}: Sending promise to {1}'.format(self.addr, msg.source)
                     self.sendMessage(promise_msg, msg.source)
                     
                     # Update the state corresponding to the current round
@@ -103,6 +102,8 @@ class Node(threading.Thread):
                                        self.addr,
                                        state.highestBallot, 
                                        state.value)
+                    print '{0}: Sending a NACK to {1}'.format(self.addr, msg.source)
+                    self.sendMessage(nack_msg, msg.source)
             
             # We haven't touched this round yet. So, accept the proposal and send a promise 
             else:
@@ -110,7 +111,7 @@ class Node(threading.Thread):
                 promise_msg = Message(msg.round, 
                                       Message.ACCEPTOR_PROMISE,
                                       self.addr)
-                print '2Sending promise to', msg.source
+                print '{0}: Sending promise to {1}'.format(self.addr, msg.source)
                 self.sendMessage(promise_msg, msg.source)
                 
                 # Update the state corresponding to the current round
@@ -120,19 +121,51 @@ class Node(threading.Thread):
                                                  msg.value)
 
         elif msg.messageType == Message.ACCEPTOR_PROMISE:
+            print '{0}: Received a promise from {1}'.format(self.addr, msg.source)
             # Ensure we are the proposer for this round 
-            if r not in self.paxosStates: return  
-            if self.paxosStates[r].role != PaxosRole.PROPOSER: return
+            if r not in self.paxosStates: return
+            
+            # Get the state corresponding to the current round
+            state = self.paxosStates[r]
+
+            if state.role != PaxosRole.PROPOSER: return
 
             # This is a valid promise from one of the servers
             # Add this server to the set of positive responses 
-            self.paxosStates[r].responses.add((msg.source, msg.ballot, msg.value))
+            state.responses.append((msg.source, msg.ballot, msg.value))
             
-            # Check if we have a quorum
-            if len(self.paxosStates[r].responses) >= self.quorumSize:
-                # Add code to check the last value and send a accept
-                # to majority of servers
-                pass
+            # Check if we have a quorum. +1 to include ourself
+            if len(state.responses) + 1 >= self.quorumSize:
+                # Get the value corresponding to the highest ballot
+                highestBallot, highestValue = None, None
+                for (_, ballot, value) in state.responses:
+                    if highestBallot == None:
+                        highestBallot, highestValue = ballot, value
+                    elif ballot > highestBallot:
+                        highestBallot, highestValue = ballot, value
+                
+                print '{0}: PROMISE Quorum formed'.format(self.addr)
+                print '{0}: Sending ACCEPT messages to all ACCEPTORS'.format(self.addr)
+                
+                accept_msg = Message(msg.round, 
+                                     Message.ACCEPTOR_ACCEPT,
+                                     self.addr,
+                                     state.highestBallot, 
+                                     highestValue)
+                
+#                 print '{0}: {1}'.format(self.addr, accept_msg)
+                for (source, _, _) in self.paxosStates[r].responses:
+                    self.sendMessage(accept_msg, source)
+
+                # Update the state corresponding to sending the accepts
+                newState = PaxosState(r, PaxosRole.PROPOSER, 
+                                      PaxosState.PROPOSER_SENT_ACCEPT,  
+                                      state.highestBallot,
+                                      highestValue)
+                self.paxosStates[r] = newState
+
+
+
         
         elif msg.messageType == Message.ACCEPTOR_NACK:
             # If we receive a NACK message from any of the servers, abandon this round
@@ -144,13 +177,30 @@ class Node(threading.Thread):
         elif msg.messageType == Message.PROPOSER_ACCEPT:
             pass
 
-    # Returns a list of servers that create a quorum
+    # Initiate Paxos with a proposal to a quorum of servers
+    def initPaxos(self, round, ballot = None, value = None):
+        if ballot == None:
+            ballot = Ballot(self.addr[0], self.addr[1])
+        prop_msg = Message(round, Message.PROPOSER_PREPARE, self.addr, ballot, value)
+        
+        print '{0}: Initiating Paxos for round {1}'.format(self.addr, round)
+        for server in self.getQuorum():
+            self.sendMessage(prop_msg, server)
+    
+        self.paxosStates[round] = PaxosState(round, PaxosRole.PROPOSER, 
+                                             PaxosState.PROPOSER_SENT_PROPOSAL,  
+                                             ballot,
+                                             value)
+        
+
+    
+    # Returns a list of servers other than self that create a quorum
     def getQuorum(self):
-        return random.sample(self.serverSet, self.quorumSize)
+        return random.sample(self.serverSet, self.quorumSize-1)
     
     # Serialize and send the given message msg to the given address addr
     def sendMessage(self, msg, addr):
-        print self.addr, 'sent message to', addr
+        print '{0}: Sent a message to {1}'.format(self.addr, addr)
         data = pickle.dumps(msg)
         self.socket.sendto(data, addr)
     
@@ -179,24 +229,28 @@ if __name__ == '__main__':
     n2 = Node('127.0.0.1', 55556)
     n2.start()
     
-    time.sleep(2)
-    b = Ballot('127.0.0.1', 55556)
-    msg = Message(0, Message.PROPOSER_PREPARE, n2.addr, b)
-    n2.sendMessage(msg, ('127.0.0.1', 55555))
-    time.sleep(2)
-    
-    print n.paxosStates[0]
-    print n2.paxosStates
-
     n3 = Node('127.0.0.1', 55557)
     n3.start()
+
     time.sleep(2)
-    b2 = Ballot('127.0.0.1', 55557)
-    msg = Message(0, Message.PROPOSER_PREPARE, n3.addr, b2)
-    n3.sendMessage(msg, ('127.0.0.1', 55555))
+#     b = Ballot('127.0.0.1', 55556)
+#     msg = Message(0, Message.PROPOSER_PREPARE, n2.addr, b)
+#     n2.sendMessage(msg, ('127.0.0.1', 55555))
+    n3.initPaxos(0, value = 10)
+    time.sleep(2)
+    
+    time.sleep(2)
+    n.initPaxos(0, value = 20)
     time.sleep(2)
     print n.paxosStates[0]
 
+    for _ in xrange(5):
+        print n.getQuorum()
+        
+    print 
+    
+    for _ in xrange(5):
+        print n2.getQuorum()
 #     time.sleep(3)
 #     b.increment()
 #     msg = Message(0, Message.ACCEPTOR_ACCEPT, n2.addr, b)
