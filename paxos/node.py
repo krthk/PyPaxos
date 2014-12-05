@@ -14,6 +14,7 @@ from paxosState import PaxosState
 from paxosState import PaxosRole
 from message import Message
 from ballot import Ballot
+from log import Log
 
 
 class Node(threading.Thread):
@@ -48,6 +49,9 @@ class Node(threading.Thread):
     
         self.messagePump = MessagePump(self.queue, self.msgReceived, owner = self, port = self.addr[1])
         self.messagePump.setDaemon(True)
+    
+        self.log = Log()
+    
     
     # Called when thread is started
     def run(self):
@@ -171,6 +175,7 @@ class Node(threading.Thread):
         else:
             self.messagePump.isRunning = True
             print "Resuming activity"
+
 
 if __name__ == '__main__':
     n = Node('127.0.0.1', 55555)
