@@ -64,6 +64,7 @@ class Node(threading.Thread):
                     self.processMessage(msg, addr)
                 except Exception as e:
                     print '{0}: {1}'.format(self.addr, data)
+                    print '{0}: Exception with message\n{1}'.format(self.addr, msg)
                     print e
             self.msgReceived.clear()
 
@@ -134,7 +135,7 @@ class Node(threading.Thread):
             # Return if the PROMISE response is not for my current highest ballot
             if state.highestBallot != msg.ballot: return 
             
-            # This is a valid promise from one of the servers
+            # This is a valid PROMISE from one of the servers
             # Add this server to the set of positive responses 
             state.responses.append((msg.source, msg.metadata['highestballot'], msg.metadata['value']))
             
@@ -165,6 +166,7 @@ class Node(threading.Thread):
 #                 print '{0}: {1}'.format(self.addr, accept_msg)
                 for (source, _, _) in self.paxosStates[r].responses:
                     self.sendMessage(accept_msg, source)
+                    time.sleep(1)
 
                 # Update the state corresponding to sending the accepts
                 newState = PaxosState(r, PaxosRole.PROPOSER, 
@@ -229,45 +231,36 @@ class Node(threading.Thread):
             # Return if the ACCEPT response is not for my current highest ballot
             if state.highestBallot != msg.ballot: return 
             
-            # This is a valid promise from one of the servers
+            # Assert that the value accepted by the acceptor is the value proposed by the proposer
+            assert msg.metadata['value'] == state.value
+            
+            # This is a valid ACCEPT from one of the servers
             # Add this server to the set of positive responses 
-            state.responses.append((msg.source, msg.metadata['highestballot'], msg.metadata['value']))
+            state.responses.append(msg.source)
             
             # Check if we have a quorum. +1 to include ourself
             if len(state.responses) + 1 >= self.quorumSize:
-                # Get the value corresponding to the highest ballot
-                highestBallot, highestValue = None, None
-                for (_, ballot, value) in state.responses:
-                    if highestBallot == None:
-                        highestBallot, highestValue = ballot, value
-                    elif ballot > highestBallot:
-                        highestBallot, highestValue = ballot, value
+                print '{0}: DECIDE Quorum formed'.format(self.addr)
+                print '{0}: Sending DECIDE messages to all ACCEPTORS and LEARNERS'.format(self.addr)
                 
-                print '{0}: PROMISE Quorum formed'.format(self.addr)
-                print '{0}: Sending ACCEPT messages to all ACCEPTORS'.format(self.addr)
-                
-                # If all the acceptors return None values, send ACCEPT messages with the value we are
-                # trying to set. Else, set value to the highest value returned by the acceptors.
-                if highestValue == None:
-                    highestValue = state.value
-                    
-                accept_msg = Message(msg.round, 
-                                     Message.PROPOSER_ACCEPT,
+                # Send DECIDE message to all the other servers
+                decide_msg = Message(msg.round, 
+                                     Message.PROPOSER_DECIDE,
                                      self.addr,
                                      state.highestBallot, 
-                                     {'value': highestValue})
+                                     {'value': state.value})
                 
-#                 print '{0}: {1}'.format(self.addr, accept_msg)
-                for (source, _, _) in self.paxosStates[r].responses:
-                    self.sendMessage(accept_msg, source)
+                print self.serverSet
+                for server in self.serverSet:
+                    self.sendMessage(decide_msg, server)
+                    time.sleep(1)
 
-                # Update the state corresponding to sending the accepts
+                # Update the state corresponding to sending the DECIDES
                 newState = PaxosState(r, PaxosRole.PROPOSER, 
-                                      PaxosState.PROPOSER_SENT_ACCEPT,  
+                                      PaxosState.PROPOSER_SENT_DECIDE,  
                                       state.highestBallot,
-                                      highestValue)
+                                      state.value)
                 self.paxosStates[r] = newState
-            pass
 
     # Initiate Paxos with a proposal to a quorum of servers
     def initPaxos(self, round, value = None, ballot = None):
@@ -328,17 +321,22 @@ if __name__ == '__main__':
     n3 = Node('127.0.0.1', 55557)
     n3.start()
 
+    n4 = Node('127.0.0.1', 55558)
+    n4.start()
+
     time.sleep(2)
 #     b = Ballot('127.0.0.1', 55556)
 #     msg = Message(0, Message.PROPOSER_PREPARE, n2.addr, b)
 #     n2.sendMessage(msg, ('127.0.0.1', 55555))
     n3.initPaxos(0, value = 10)
-    time.sleep(2)
-    
-    time.sleep(2)
-    n.initPaxos(0, value = 20)
-    time.sleep(2)
-    print n.paxosStates[0]
+    n.paxosStates[0]
+    n1.paxosStates[0]
+    n2.paxosStates[0]
+    n3.paxosStates[0]
+#     time.sleep(2)
+#     n.initPaxos(0, value = 20)
+#     time.sleep(2)
+#     print n.paxosStates[0]
 
 #     for _ in xrange(5):
 #         print n.getQuorum()
