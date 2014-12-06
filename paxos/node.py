@@ -18,7 +18,7 @@ from ballot import Ballot
 
 class Node(threading.Thread):
     
-    def __init__(self, ip, port = 55555):
+    def __init__(self, ip, port = 55555, config = 'config'):
         threading.Thread.__init__(self)
         
         self.addr = (ip, port)
@@ -26,7 +26,7 @@ class Node(threading.Thread):
 
         # Read config and add the servers to the set
         self.serverSet = Set()
-        for server in open('config2').read().splitlines():
+        for server in open(config).read().splitlines():
             _ip, _port = server.split(':')
             
             # Only add if it is not the local server
@@ -106,9 +106,9 @@ class Node(threading.Thread):
                     print '{0}: Sending a NACK to {1}'.format(self.addr, msg.source)
                     self.sendMessage(nack_msg, msg.source)
             
-            # We haven't touched this round yet. So, accept the proposal and send a promise 
+            # We haven't touched this round yet. So, accept the proposal and send a PROMISE 
             else:
-                # Respond to the proposer with a promise not to accept any lower ballots
+                # Respond to the proposer with a PROMISE not to accept any lower ballots
                 promise_msg = Message(msg.round, 
                                       Message.ACCEPTOR_PROMISE,
                                       self.addr, 
@@ -184,9 +184,9 @@ class Node(threading.Thread):
                 
         elif msg.messageType == Message.PROPOSER_ACCEPT:
             # Try to get the state for the acceptor
-            try: 
+            if r in self.paxosStates:
                 state = self.paxosStates[r]
-            except: 
+            else:
                 return
             # Accept the ACCEPT request with the value if we haven't responded to any other 
             # server with a higher ballot
@@ -332,16 +332,16 @@ class Node(threading.Thread):
             print "Resuming activity"
 
 if __name__ == '__main__':
-    n = Node('127.0.0.1', 55555)
-    n.start()
+    n1 = Node('127.0.0.1', 55555, 'config2')
+    n1.start()
 
-    n2 = Node('127.0.0.1', 55556)
+    n2 = Node('127.0.0.1', 55556, 'config2')
     n2.start()
     
-    n3 = Node('127.0.0.1', 55557)
+    n3 = Node('127.0.0.1', 55557, 'config2')
     n3.start()
 
-    n4 = Node('127.0.0.1', 55558)
+    n4 = Node('127.0.0.1', 55558, 'config2')
     n4.start()
 
     time.sleep(2)
@@ -349,11 +349,11 @@ if __name__ == '__main__':
 #     msg = Message(0, Message.PROPOSER_PREPARE, n2.addr, b)
 #     n2.sendMessage(msg, ('127.0.0.1', 55555))
     n3.initPaxos(0, value = 10)
-    time.sleep(10)
-    n.paxosStates[0]
-    n2.paxosStates[0]
-    n3.paxosStates[0]
-    n4.paxosStates[0]
+    time.sleep(5)
+    print n1.paxosStates[0]
+    print n2.paxosStates[0]
+    print n3.paxosStates[0]
+    print n4.paxosStates[0]
 #     time.sleep(2)
 #     n.initPaxos(0, value = 20)
 #     time.sleep(2)
