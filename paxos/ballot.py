@@ -23,7 +23,10 @@ class Ballot():
         self.nodeIdentifier = __ip_to_int(ip, port)
         
     def increment(self):
-            self.n += 1
+        self.n += 1
+    
+    def set_n(self, n):
+        self.n = n
 
     def __lt__(self, other):
         if self.n < other.n : 

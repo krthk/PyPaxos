@@ -13,7 +13,7 @@ class Message():
     PROPOSER_DECIDE     = 6
     
         
-    def __init__(self, round, messageType, source, ballot = None, value = None, metadata = None):
+    def __init__(self, round, messageType, source, ballot = None, metadata = None):
         self.source = source
         self.round = round
         self.ballot = ballot
