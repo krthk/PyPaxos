@@ -122,7 +122,7 @@ class Node(threading.Thread):
                                                  msg.ballot)
 
         elif msg.messageType == Message.ACCEPTOR_PROMISE:
-            print '{0}: Received a promise from {1}'.format(self.addr, msg.source)
+            print '{0}: Received a PROMISE from {1}'.format(self.addr, msg.source)
             # Ensure we are the proposer for this round 
             if r not in self.paxosStates: return
             
@@ -157,7 +157,7 @@ class Node(threading.Thread):
                     highestValue = state.value
                     
                 accept_msg = Message(msg.round, 
-                                     Message.ACCEPTOR_ACCEPT,
+                                     Message.PROPOSER_ACCEPT,
                                      self.addr,
                                      state.highestBallot, 
                                      {'value': highestValue})
@@ -172,9 +172,6 @@ class Node(threading.Thread):
                                       state.highestBallot,
                                       highestValue)
                 self.paxosStates[r] = newState
-
-
-
         
         elif msg.messageType == Message.ACCEPTOR_NACK:
             # If we receive a NACK message from any of the servers, abandon this round
@@ -195,8 +192,19 @@ class Node(threading.Thread):
                 newState = PaxosState(r, PaxosRole.ACCEPTOR, 
                                       PaxosState.ACCEPTOR_ACCEPTED,  
                                       msg.ballot,
-                                      msg.messageType['value'])
+                                      msg.metadata['value'])
             
+                print '{0}: Received accept message. Setting value to {1}'.format(self.addr, msg.metadata['value'])
+                
+                # Send ACCEPTOR_ACCEPT message to the proposer
+                accepted_msg = Message(msg.round, 
+                                       Message.ACCEPTOR_ACCEPT,
+                                       self.addr,
+                                       msg.ballot, 
+                                       {'value': msg.metadata['value']})
+                self.sendMessage(accepted_msg, msg.source)
+                
+
             # If we received a newer proposal before getting an accept from the original proposer,
             # send a NACK to the original proposer
             else:
@@ -208,9 +216,61 @@ class Node(threading.Thread):
                 print '{0}: Sending a NACK to {1}'.format(self.addr, msg.source)
                 self.sendMessage(nack_msg, msg.source)
 
+        elif msg.messageType == Message.ACCEPTOR_ACCEPT:
+            print '{0}: Received an ACCEPT from {1}'.format(self.addr, msg.source)
+            # Ensure we are the proposer for this round 
+            if r not in self.paxosStates: return
+            
+            # Get the state corresponding to the current round
+            state = self.paxosStates[r]
+
+            # Return if I am not a proposer
+            if state.role != PaxosRole.PROPOSER: return
+            # Return if the ACCEPT response is not for my current highest ballot
+            if state.highestBallot != msg.ballot: return 
+            
+            # This is a valid promise from one of the servers
+            # Add this server to the set of positive responses 
+            state.responses.append((msg.source, msg.metadata['highestballot'], msg.metadata['value']))
+            
+            # Check if we have a quorum. +1 to include ourself
+            if len(state.responses) + 1 >= self.quorumSize:
+                # Get the value corresponding to the highest ballot
+                highestBallot, highestValue = None, None
+                for (_, ballot, value) in state.responses:
+                    if highestBallot == None:
+                        highestBallot, highestValue = ballot, value
+                    elif ballot > highestBallot:
+                        highestBallot, highestValue = ballot, value
+                
+                print '{0}: PROMISE Quorum formed'.format(self.addr)
+                print '{0}: Sending ACCEPT messages to all ACCEPTORS'.format(self.addr)
+                
+                # If all the acceptors return None values, send ACCEPT messages with the value we are
+                # trying to set. Else, set value to the highest value returned by the acceptors.
+                if highestValue == None:
+                    highestValue = state.value
+                    
+                accept_msg = Message(msg.round, 
+                                     Message.PROPOSER_ACCEPT,
+                                     self.addr,
+                                     state.highestBallot, 
+                                     {'value': highestValue})
+                
+#                 print '{0}: {1}'.format(self.addr, accept_msg)
+                for (source, _, _) in self.paxosStates[r].responses:
+                    self.sendMessage(accept_msg, source)
+
+                # Update the state corresponding to sending the accepts
+                newState = PaxosState(r, PaxosRole.PROPOSER, 
+                                      PaxosState.PROPOSER_SENT_ACCEPT,  
+                                      state.highestBallot,
+                                      highestValue)
+                self.paxosStates[r] = newState
+            pass
 
     # Initiate Paxos with a proposal to a quorum of servers
-    def initPaxos(self, round, ballot = None, value = None):
+    def initPaxos(self, round, value = None, ballot = None):
         if ballot == None:
             ballot = Ballot(self.addr[0], self.addr[1])
             if round in self.paxosStates:
