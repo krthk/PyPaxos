@@ -26,7 +26,7 @@ class Message():
                 'Round:    {1}\n' 
                 'Ballot:   {2}\n'
                 'Type:     {3}\n'
-                'Metadata: {4}\n'.format(self.source, 
+                'Metadata: {4}'.format(self.source, 
                                         self.round, 
                                         self.ballot, 
                                         self.messageType, 

@@ -196,7 +196,7 @@ class Node(threading.Thread):
                                       msg.ballot,
                                       msg.metadata['value'])
             
-                print '{0}: Received accept message. Setting value to {1}'.format(self.addr, msg.metadata['value'])
+                print '{0}: Received ACCEPT message. Setting value to {1}'.format(self.addr, msg.metadata['value'])
                 
                 # Send ACCEPTOR_ACCEPT message to the proposer
                 accepted_msg = Message(msg.round, 
@@ -260,6 +260,26 @@ class Node(threading.Thread):
                                       PaxosState.PROPOSER_SENT_DECIDE,  
                                       state.highestBallot,
                                       state.value)
+                self.paxosStates[r] = newState
+
+        elif msg.messageType == Message.PROPOSER_DECIDE:
+            print '{0}: Received a DECIDE message'.format(self.addr)
+            if r in self.paxosStates:
+                # Get the state corresponding to the current round
+                state = self.paxosStates[r]
+    
+                # Update the state corresponding to receiving the DECIDE
+                newState = PaxosState(r, state.role, 
+                                      PaxosState.ACCEPTOR_DECIDED if state.role == PaxosRole.ACCEPTOR else PaxosState.LEARNER_DECIDED,
+                                      state.highestBallot,
+                                      msg.metadata['value'])
+                self.paxosStates[r] = newState
+            else:
+                # Update the state corresponding to receiving the DECIDE
+                newState = PaxosState(r, PaxosRole.LEARNER, 
+                                      PaxosState.LEARNER_DECIDED,
+                                      msg.ballot,
+                                      msg.metadata['value'])
                 self.paxosStates[r] = newState
 
     # Initiate Paxos with a proposal to a quorum of servers
@@ -329,10 +349,11 @@ if __name__ == '__main__':
 #     msg = Message(0, Message.PROPOSER_PREPARE, n2.addr, b)
 #     n2.sendMessage(msg, ('127.0.0.1', 55555))
     n3.initPaxos(0, value = 10)
+    time.sleep(10)
     n.paxosStates[0]
-    n1.paxosStates[0]
     n2.paxosStates[0]
     n3.paxosStates[0]
+    n4.paxosStates[0]
 #     time.sleep(2)
 #     n.initPaxos(0, value = 20)
 #     time.sleep(2)

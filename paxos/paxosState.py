@@ -16,9 +16,10 @@ class PaxosState(object):
     PROPOSER_SENT_PROPOSAL      = 0
     ACCEPTOR_SENT_PROMISE       = 1
     PROPOSER_SENT_ACCEPT        = 2
-    PROPOSER_SENT_DECIDE        = 3
-    ACCEPTOR_ACCEPTED           = 4
-    LEARNER_ACCEPTED            = 5
+    ACCEPTOR_ACCEPTED           = 3
+    PROPOSER_SENT_DECIDE        = 4
+    ACCEPTOR_DECIDED            = 5
+    LEARNER_DECIDED             = 6
     
     def __init__(self, round, role, stage, highestBallot = None, value = None):
         self.round = round
