@@ -84,8 +84,8 @@ class Node(threading.Thread):
                     promise_msg = Message(msg.round, 
                                           Message.ACCEPTOR_PROMISE, 
                                           self.addr,
-                                          state.highestBallot, 
-                                          state.value)
+                                          msg.ballot, 
+                                          {'highestballot': state.highestBallot, 'value': state.value})
                     print '{0}: Sending promise to {1}'.format(self.addr, msg.source)
                     self.sendMessage(promise_msg, msg.source)
                     
@@ -100,8 +100,8 @@ class Node(threading.Thread):
                     nack_msg = Message(msg.round, 
                                        Message.ACCEPTOR_NACK, 
                                        self.addr,
-                                       state.highestBallot, 
-                                       state.value)
+                                       msg.ballot, 
+                                       {'highestballot': state.highestBallot, 'value': state.value})
                     print '{0}: Sending a NACK to {1}'.format(self.addr, msg.source)
                     self.sendMessage(nack_msg, msg.source)
             
@@ -110,7 +110,8 @@ class Node(threading.Thread):
                 # Respond to the proposer with a promise not to accept any lower ballots
                 promise_msg = Message(msg.round, 
                                       Message.ACCEPTOR_PROMISE,
-                                      self.addr)
+                                      self.addr, 
+                                      msg.ballot)
                 print '{0}: Sending promise to {1}'.format(self.addr, msg.source)
                 self.sendMessage(promise_msg, msg.source)
                 
@@ -128,11 +129,14 @@ class Node(threading.Thread):
             # Get the state corresponding to the current round
             state = self.paxosStates[r]
 
+            # Return if I am not a proposer
             if state.role != PaxosRole.PROPOSER: return
-
+            # Return if the PROMISE response is not for my current highest ballot
+            if state.highestBallot != msg.ballot: return 
+            
             # This is a valid promise from one of the servers
             # Add this server to the set of positive responses 
-            state.responses.append((msg.source, msg.ballot, msg.value))
+            state.responses.append((msg.source, msg.metadata['highestballot'], msg.metadata['value']))
             
             # Check if we have a quorum. +1 to include ourself
             if len(state.responses) + 1 >= self.quorumSize:
@@ -151,7 +155,7 @@ class Node(threading.Thread):
                                      Message.ACCEPTOR_ACCEPT,
                                      self.addr,
                                      state.highestBallot, 
-                                     highestValue)
+                                     {'Value': highestValue})
                 
 #                 print '{0}: {1}'.format(self.addr, accept_msg)
                 for (source, _, _) in self.paxosStates[r].responses:

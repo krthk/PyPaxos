@@ -13,21 +13,22 @@ class Message():
     PROPOSER_DECIDE     = 6
     
         
-    def __init__(self, round, messageType, source, ballot = None, value = None):
-        self.round = round
-        self.messageType = messageType
+    def __init__(self, round, messageType, source, ballot = None, value = None, metadata = None):
         self.source = source
+        self.round = round
         self.ballot = ballot
-        self.value = value
+        self.messageType = messageType
+#         self.value = value
+        self.metadata = metadata
     
     def __str__(self):
-        return ('From:    {0}\n'
-                'Round:   {1}\n' 
-                'Ballot:  {2}\n'
-                'Type:    {3}\n'
-                'Value    {4}\n'.format(self.source, 
+        return ('From:     {0}\n'
+                'Round:    {1}\n' 
+                'Ballot:   {2}\n'
+                'Type:     {3}\n'
+                'Metadata: {4}\n'.format(self.source, 
                                         self.round, 
                                         self.ballot, 
                                         self.messageType, 
-                                        self.value))
+                                        self.metadata))
                         
