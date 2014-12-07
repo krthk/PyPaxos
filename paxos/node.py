@@ -189,9 +189,9 @@ class Node(threading.Thread):
             # If we receive a NACK message from any of the servers, abandon this round
             # because we are never going to succeed with the current ballot number
             
-            waitTime = random.uniform(1.0, 5.0, msg.value, msg.ballot)
-            timer = threading.timer(waitTime, self.retryPaxos)
-            print 'Received NACK. Waiting {0} seconds'.format(waitTime)
+            waitTime = random.uniform(1.0, 5.0)
+            timer = threading.timer(waitTime, self.retryPaxos, [msg.value, msg.ballot])
+            print '{0}: Received NACK. Waiting {1} seconds'.format(self.addr, waitTime)
                 
         elif msg.messageType == Message.PROPOSER_ACCEPT:
             # Try to get the state for the acceptor
@@ -277,7 +277,7 @@ class Node(threading.Thread):
                 self.removeRound(r)
 
                 # Add the result to the log
-                print "*** UPDATE THE TRANSACTION TYPE AND VALUE ***"
+                print '{0}: UPDATE THE TRANSACTION TYPE AND VALUE'.format(self.addr)
                 self.log.appendTransaction(Log.DEPOSIT, 100, r)
                 self.account.deposit(100)
 
@@ -305,12 +305,15 @@ class Node(threading.Thread):
             self.removeRound(r)
                 
             # Add the result to the log
-            print "*** UPDATE THE TRANSACTION TYPE AND VALUE"
+            print '{0}: UPDATE THE TRANSACTION TYPE AND VALUE'.format(self.addr)
             self.log.appendTransaction(Log.DEPOSIT, 100, r)
             self.account.deposit(100)
 
     # Initiate Paxos with a proposal to a quorum of servers
-    def initPaxos(self, round, value = None, ballot = None):
+    def initPaxos(self, round = None, value = None, ballot = None):
+        if round == None:
+            round = self.getNextRound()
+            
         if ballot == None:
             ballot = Ballot(self.addr[0], self.addr[1])
             if round in self.paxosStates:
@@ -329,10 +332,7 @@ class Node(threading.Thread):
                                              value)
 
     #After receiving a NACK, retry with the lowest available round and the failed value
-    def retryPaxos(self, *args):
-        failedValue = args[0]
-        highestBallot = args[1]
-            
+    def retryPaxos(self, failedValue, highestBallot):
         newRound = self.getNextRound()
         ballot = Ballot(self.addr[0], self.addr[1], highestballot.n+1)
             
@@ -407,6 +407,10 @@ if __name__ == '__main__':
     print n2.paxosStates[0]
     print n3.paxosStates[0]
     print n4.paxosStates[0]
+    
+    n1.removeRound(4)
+    print n1.setOfGaps
+    print n1.getNextRound()
 #     time.sleep(2)
 #     n.initPaxos(0, value = 20)
 #     time.sleep(2)
