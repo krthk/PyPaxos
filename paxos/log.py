@@ -8,22 +8,14 @@ class Log():
     
     def __init__(self):
         self.transactions = {}
-        self.nextTransationNum = 1
     
-    def addTransaction(self, type, value):
-        self.transactions[self.nextTransationNum] = (type, value)
-        self.nextTransationNum += 1
+    def appendTransaction(self, type, value, roundNum):
+        if roundNum in self.transactions:
+            print "OVERWRITTING TRANSACTION #" + str(roundNum)
+        
+        self.transactions[self.roundNum] = (type, value)
+        self.save()
     
-    #Delete a single transaction
-    def deleteTransaction(self, transactionNum):
-        if transactionNum in self.transactions:
-            del self.transactions[transactionNum]
-    
-    #Delete all transactions less than the specified transaction num
-    def deleteTransactionsUpToTransactionNum(self, transactionNum):
-        for key in range(1, transactionNum):
-            if key in self.transactions:
-                self.deleteTransaction(key)
 
     #Persist the log to disk
     def save(self):
@@ -39,7 +31,6 @@ class Log():
         try:
             with open('log.dat', 'rb') as file:
                 self.transactions = pickle.load(file)
-                self.nextTransationNum = max(self.transactions.iterkeys())+1
                 print "Found existing log:\n", self, "\n"
 
         except Exception as e:
@@ -58,21 +49,10 @@ class Log():
 if __name__ == '__main__':
     l = Log()
     l.restore()
-    l.addTransaction(Log.DEPOSIT, 1000)
-    l.addTransaction(Log.WITHDRAW, 200)
-    l.addTransaction(Log.WITHDRAW, 300)
-    l.addTransaction(Log.DEPOSIT, 700)
+    l.appendTransaction(Log.DEPOSIT, 1000, 1)
+    l.appendTransaction(Log.WITHDRAW, 200, 2)
+    l.appendTransaction(Log.WITHDRAW, 300, 3)
+    l.appendTransaction(Log.DEPOSIT, 700, 4)
     print l
-    l.deleteTransaction(2)
-    print l
-    l.deleteTransactionsUpToTransactionNum(100)
-    print l
-    l.addTransaction(Log.WITHDRAW, 300)
-    print l
-    l.addTransaction(Log.DEPOSIT, 700)
-    print l
-    l.addTransaction(Log.DEPOSIT, 1000)
-    print l
-    l.save()
 
 

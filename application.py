@@ -50,6 +50,8 @@ while True:
         print "  - Simulates a node failure\n"
         print "(u)nfail"
         print "  - Starts node after fail was called\n"
+        print " (p)rint"
+        print "  - Prints the contents of the transaction log"
         print "------------------------------------------------"
         continue
 
@@ -83,7 +85,10 @@ while True:
 
             elif args[0] == "w" or args[0] == "withdraw":
                 account.withdraw(amount)
-    
+
+            elif args[0] == "p" or args[0] == "print":
+                "PRINT THE LOG"
+
         else:
             print "Invalid amount"
 
