@@ -5,40 +5,49 @@ import threading
 import time
 import helper
 import signal
+import os
 from paxos.node import Node
 from paxos.log import Log
 
 
 def signal_handler(sig, frame):
     print('You pressed Ctrl+C!')
-    os.kill(getpid(), signal.SIGTERM)
+    os.kill(os.getpid(), signal.SIGTERM)
     exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
 
-#Get the arguments
+# Get the arguments
 if len(argv) != 3:
     print ""
     print "Usage: %s <ip> <port>" % str(argv[0])
     print ""
     exit(0)
 
-#Create Node object
+# Create Node object
 node = Node(argv[1], int(argv[2]))
 node.daemon = True
 node.start()
 
-#Wait a moment for the node to get its socket set up
+# Threading event for when our proposal is accepted
+proposalCompleted = threading.Event()
+proposalCompleted.set()
+
+# Wait a moment for the node to get its socket set up
 time.sleep(1)
 
 
 
-#Main loop of application
+# Main loop of application
 while True:
-    #Get user input
+    # Wait for the current proposal to finish
+    proposalCompleted.wait()
+    proposalCompleted.clear()
+    
+    # Get user input
     input = raw_input("\n> ")
     
-    #End application
+    # End application
     if input == "quit":
         exit(0)
     
@@ -60,7 +69,7 @@ while True:
         continue
 
 
-    #Split the input into args
+    # Split the input into args
     args = input.split()
 
     if len(args) == 1:
@@ -77,10 +86,14 @@ while True:
             
         elif args[0] == "p" or args[0] == "print":
             node.log.history()
+                
+        # No need to wait because we never sent a proposal
+        proposalCompleted.set()
 
     elif len(args) == 2:
         args[0] = args[0].lower()
-        #Make sure second arg is a numberical value
+        
+        # Make sure second arg is a numberical value
         if helper.isNumber(args[1]):
             amount = float(args[1])
             h = hash((args[0], amount, node.addr, int(time.time())))
@@ -93,8 +106,13 @@ while True:
                     node.initPaxos(value = (Log.WITHDRAW, amount, h))
                 else: 
                     print 'Not enough funds in your account. Sucker!'
+                    proposalCompleted.set()
+    
+            else:
+                proposalCompleted.set()
+                
         else:
-            print "Invalid amount"
+            print 'Invalid amount'
 
 
 
