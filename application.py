@@ -24,14 +24,14 @@ if len(argv) != 3:
     print ""
     exit(0)
 
-# Create Node object
-node = Node(argv[1], int(argv[2]))
-node.daemon = True
-node.start()
-
 # Threading event for when our proposal is accepted
 proposalCompleted = threading.Event()
 proposalCompleted.set()
+
+# Create Node object
+node = Node(argv[1], int(argv[2]), proposalCompleted = proposalCompleted)
+node.daemon = True
+node.start()
 
 # Wait a moment for the node to get its socket set up
 time.sleep(1)
@@ -102,7 +102,7 @@ while True:
                 node.initPaxos(value = (Log.DEPOSIT, amount, h))
             
             elif args[0] == "w" or args[0] == "withdraw":
-                if node.account.isSufficient(amount): 
+                if node.account.isSufficient(amount):
                     node.initPaxos(value = (Log.WITHDRAW, amount, h))
                 else: 
                     print 'Not enough funds in your account. Sucker!'
