@@ -5,6 +5,7 @@ import threading
 import time
 import helper
 from paxos.node import Node
+from paxos.log import Log
 
 
 #Get the arguments
@@ -73,12 +74,11 @@ while True:
             amount = float(args[1])
             
             if args[0] == "d" or args[0] == "deposit":
-                #self.node.account.deposit(amount)
-                self.node.initPaxos
+                self.node.initPaxos(value = (Log.DEPOSIT, amount))
             
 
             elif args[0] == "w" or args[0] == "withdraw":
-                #self.node.account.withdraw(amount)
+                self.node.initPaxos(value = (Log.WITHDRAW, amount))
 
             elif args[0] == "p" or args[0] == "print":
                 self.node.log.history()

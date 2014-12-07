@@ -277,9 +277,14 @@ class Node(threading.Thread):
                 self.removeRound(r)
 
                 # Add the result to the log
-                print '{0}: UPDATE THE TRANSACTION TYPE AND VALUE'.format(self.addr)
-                self.log.appendTransaction(Log.DEPOSIT, 100, r)
-                self.account.deposit(100)
+                self.log.appendTransaction(msg.value[0], msg.value[1], r)
+          
+                if msg.value[0] == Log.DEPOSIT:
+                    self.account.deposit(msg.value[1])
+
+                elif msg.value[0] == Log.WITHDRAW:
+                    self.account.withdraw(msg.value[1])
+                
 
         elif msg.messageType == Message.PROPOSER_DECIDE:
             print '{0}: Received a DECIDE message'.format(self.addr)
@@ -305,9 +310,13 @@ class Node(threading.Thread):
             self.removeRound(r)
                 
             # Add the result to the log
-            print '{0}: UPDATE THE TRANSACTION TYPE AND VALUE'.format(self.addr)
-            self.log.appendTransaction(Log.DEPOSIT, 100, r)
-            self.account.deposit(100)
+            self.log.appendTransaction(msg.value[0], msg.value[1], r)
+
+            if msg.value[0] == Log.DEPOSIT:
+                self.account.deposit(msg.value[1])
+
+            elif msg.value[0] == Log.WITHDRAW:
+                self.account.withdraw(msg.value[1])
 
     # Initiate Paxos with a proposal to a quorum of servers
     def initPaxos(self, round = None, value = None, ballot = None):
