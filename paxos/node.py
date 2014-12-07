@@ -192,7 +192,7 @@ class Node(threading.Thread):
             
             waitTime = random.uniform(1.0, 5.0)
             timer = threading.timer(waitTime, self.retryPaxos, [msg.metadata['value'], msg.ballot])
-            print '{0}: Received NACK. Waiting {1} seconds'.format(self.addr, waitTime)
+            print '{0}: Received NACK. Waiting {1} seconds and retrying'.format(self.addr, waitTime)
                 
         elif msg.messageType == Message.PROPOSER_ACCEPT:
             # Try to get the state for the acceptor
@@ -278,13 +278,14 @@ class Node(threading.Thread):
                 self.removeRound(r)
 
                 # Add the result to the log
-                self.log.appendTransaction(msg.metadata['value'][0], msg.metadata['value'][1], r)
+                value_type, value_amount, value_hash = msg.metadata['value'][0], msg.metadata['value'][1], msg.metadata['value'][2]
+                self.log.appendTransaction(value_type, value_amount, value_hash)
           
-                if msg.metadata['value'][0] == Log.DEPOSIT:
-                    self.account.deposit(msg.metadata['value'][1])
+                if value_type == Log.DEPOSIT:
+                    self.account.deposit(value_amount)
 
-                elif msg.metadata['value'][0] == Log.WITHDRAW:
-                    self.account.withdraw(msg.metadata['value'][1])
+                elif value_type == Log.WITHDRAW:
+                    self.account.withdraw(value_amount)
                 
 
         elif msg.messageType == Message.PROPOSER_DECIDE:
@@ -311,13 +312,14 @@ class Node(threading.Thread):
             self.removeRound(r)
                 
             # Add the result to the log
-            self.log.appendTransaction(msg.metadata['value'][0], msg.metadata['value'][1], r)
+            value_type, value_amount, value_hash = msg.metadata['value'][0], msg.metadata['value'][1], msg.metadata['value'][2]
+            self.log.appendTransaction(value_type, value_amount, value_hash)
 
-            if msg.metadata['value'][0] == Log.DEPOSIT:
-                self.account.deposit(msg.metadata['value'][1])
+            if value_type == Log.DEPOSIT:
+                self.account.deposit(value_amount)
 
-            elif msg.metadata['value'][0] == Log.WITHDRAW:
-                self.account.withdraw(msg.metadata['value'][1])
+            elif value_type == Log.WITHDRAW:
+                self.account.withdraw(value_amount)
 
     # Initiate Paxos with a proposal to a quorum of servers
     def initPaxos(self, round = None, value = None, ballot = None):

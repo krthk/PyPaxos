@@ -14,7 +14,6 @@ def signal_handler(sig, frame):
     os.kill(getpid(), signal.SIGTERM)
     exit(0)
 
-
 signal.signal(signal.SIGINT, signal_handler)
 
 #Get the arguments
@@ -84,13 +83,14 @@ while True:
         #Make sure second arg is a numberical value
         if helper.isNumber(args[1]):
             amount = float(args[1])
+            h = hash((args[0], amount, node.addr, int(time.time())))
             
             if args[0] == "d" or args[0] == "deposit":
-                node.initPaxos(value = (Log.DEPOSIT, amount))
+                node.initPaxos(value = (Log.DEPOSIT, amount, h))
             
             elif args[0] == "w" or args[0] == "withdraw":
                 if node.account.isSufficient(amount): 
-                    node.initPaxos(value = (Log.WITHDRAW, amount))
+                    node.initPaxos(value = (Log.WITHDRAW, amount, h))
                 else: 
                     print 'Not enough funds in your account. Sucker!'
         else:

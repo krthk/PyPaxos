@@ -42,17 +42,14 @@ class Log():
         except Exception as e:
             return False
 
-    def appendTransaction(self, type, value, roundNum):
-        if roundNum in self.transactions:
-            print 'OVERWRITTING EXISTING TRANSACTION #{0}'.format(roundNum)
-            
+    def appendTransaction(self, type, value, hash):
         if type == Log.DEPOSIT:
             self.balance += value
 
         elif type == Log.WITHDRAW:
             self.balance -= value
 
-        self.transactions.append((type, value))
+        self.transactions.append((type, value, hash))
         self.save()
 
     def history(self):
