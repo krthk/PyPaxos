@@ -327,7 +327,17 @@ class Node(threading.Thread):
                                              PaxosState.PROPOSER_SENT_PROPOSAL,  
                                              ballot,
                                              value)
-        
+
+    #After receiving a NACK, retry with the lowest available round and the failed value
+    def retryPaxos(self, *args):
+        failedValue = args[0]
+        highestBallot = args[1]
+            
+        newRound = self.getNextRound()
+        ballot = Ballot(self.addr[0], self.addr[1], highestballot.n+1)
+            
+        self.initPaxos(newRound, failedValue, ballot)
+    
     # Get the next available round number 
     def getNextRound(self):
         if not self.setOfGaps: 
