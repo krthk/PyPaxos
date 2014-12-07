@@ -8,22 +8,6 @@ class Log():
     
     def __init__(self):
         self.transactions = {}
-        self.nextTransationNum = 1
-    
-    def addTransaction(self, type, value):
-        self.transactions[self.nextTransationNum] = (type, value)
-        self.nextTransationNum += 1
-    
-    #Delete a single transaction
-    def deleteTransaction(self, transactionNum):
-        if transactionNum in self.transactions:
-            del self.transactions[transactionNum]
-    
-    #Delete all transactions less than the specified transaction num
-    def deleteTransactionsUpToTransactionNum(self, transactionNum):
-        for key in range(1, transactionNum):
-            if key in self.transactions:
-                self.deleteTransaction(key)
 
     #Persist the log to disk
     def save(self):
@@ -39,18 +23,30 @@ class Log():
         try:
             with open('log.dat', 'rb') as file:
                 self.transactions = pickle.load(file)
-                self.nextTransationNum = max(self.transactions.iterkeys())+1
                 print "Found existing log:\n", self, "\n"
 
         except Exception as e:
             print e
 
+    def appendTransaction(self, type, value, roundNum):
+        if roundNum in self.transactions:
+            print "OVERWRITTING EXISTING TRANSACTION #" + str(roundNum)
+            
+            self.transactions[roundNum] = (type, value)
+            self.save()
+
+    def history(self):
+        for key in self.transactions:
+            if self.transactions[key].type == Log.DEPOSIT:
+                print '\nDeposit:  ${0}'.format(self.transactions[key].value)
+
+            elif self.transactions[key].type == Log.WITHDRAW:
+                print '\nWithdraw: ${0}'.format(self.transactions[key].value)
+
 
     def __str__(self):
         return ('Num transactions:       {0}\n'
-                'Next transaction num:   {1}\n'
-                'Transactions:           {2}\n'.format(len(self.transactions),
-                                                self.nextTransationNum,
+                'Transactions:           {1}\n'.format(len(self.transactions),
                                                 self.transactions))
 
 
@@ -58,21 +54,10 @@ class Log():
 if __name__ == '__main__':
     l = Log()
     l.restore()
-    l.addTransaction(Log.DEPOSIT, 1000)
-    l.addTransaction(Log.WITHDRAW, 200)
-    l.addTransaction(Log.WITHDRAW, 300)
-    l.addTransaction(Log.DEPOSIT, 700)
+    l.appendTransaction(Log.DEPOSIT, 1000, 1)
+    l.appendTransaction(Log.WITHDRAW, 200, 2)
+    l.appendTransaction(Log.WITHDRAW, 300, 3)
+    l.appendTransaction(Log.DEPOSIT, 700, 4)
     print l
-    l.deleteTransaction(2)
-    print l
-    l.deleteTransactionsUpToTransactionNum(100)
-    print l
-    l.addTransaction(Log.WITHDRAW, 300)
-    print l
-    l.addTransaction(Log.DEPOSIT, 700)
-    print l
-    l.addTransaction(Log.DEPOSIT, 1000)
-    print l
-    l.save()
 
 
