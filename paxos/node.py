@@ -102,7 +102,7 @@ class Node(threading.Thread):
                                           self.addr,
                                           msg.ballot, 
                                           {'highestballot': state.highestBallot, 'value': state.value})
-                    print '{0}: Sending promise to {1}'.format(self.addr, msg.source)
+                    print '{0}: Sending PROMISE to {1}'.format(self.addr, msg.source)
                     self.sendMessage(promise_msg, msg.source)
                     
                     # Update the state corresponding to the current round
@@ -129,7 +129,7 @@ class Node(threading.Thread):
                                       self.addr, 
                                       msg.ballot,
                                       {'highestballot': None, 'value': None})
-                print '{0}: Sending promise to {1}'.format(self.addr, msg.source)
+                print '{0}: Sending PROMISE to {1}'.format(self.addr, msg.source)
                 self.sendMessage(promise_msg, msg.source)
                 
                 # Update the state corresponding to the current round
@@ -283,7 +283,7 @@ class Node(threading.Thread):
 
                 # Add the result to the log
                 value_type, value_amount, value_hash = msg.metadata['value'][0], msg.metadata['value'][1], msg.metadata['value'][2]
-                self.log.appendTransaction(value_type, value_amount, value_hash)
+                self.log.addTransaction(r, value_type, value_amount, value_hash)
           
                 if value_type == Log.DEPOSIT:
                     self.account.deposit(value_amount)
@@ -320,7 +320,7 @@ class Node(threading.Thread):
                 
             # Add the result to the log
             value_type, value_amount, value_hash = msg.metadata['value'][0], msg.metadata['value'][1], msg.metadata['value'][2]
-            self.log.appendTransaction(value_type, value_amount, value_hash)
+            self.log.addTransaction(r, value_type, value_amount, value_hash)
 
             if value_type == Log.DEPOSIT:
                 self.account.deposit(value_amount)

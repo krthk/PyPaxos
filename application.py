@@ -42,7 +42,6 @@ time.sleep(1)
 while True:
     # Wait for the current proposal to finish
     proposalCompleted.wait()
-    proposalCompleted.clear()
     
     # Get user input
     input = raw_input("\n> ")
@@ -87,30 +86,25 @@ while True:
         elif args[0] == "p" or args[0] == "print":
             node.log.history()
                 
-        # No need to wait because we never sent a proposal
-        proposalCompleted.set()
-
     elif len(args) == 2:
         args[0] = args[0].lower()
         
-        # Make sure second arg is a numberical value
+        # Make sure second arg is a numerical value
         if helper.isNumber(args[1]):
             amount = float(args[1])
             h = hash((args[0], amount, node.addr, int(time.time())))
             
             if args[0] == "d" or args[0] == "deposit":
+                proposalCompleted.clear()
                 node.initPaxos(value = (Log.DEPOSIT, amount, h))
             
             elif args[0] == "w" or args[0] == "withdraw":
                 if node.account.isSufficient(amount):
+                    proposalCompleted.clear()
                     node.initPaxos(value = (Log.WITHDRAW, amount, h))
                 else: 
                     print 'Not enough funds in your account. Sucker!'
-                    proposalCompleted.set()
     
-            else:
-                proposalCompleted.set()
-                
         else:
             print 'Invalid amount'
 
