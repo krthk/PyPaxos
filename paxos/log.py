@@ -34,8 +34,8 @@ class Log():
         if roundNum in self.transactions:
             print "OVERWRITTING EXISTING TRANSACTION #" + str(roundNum)
             
-            self.transactions[roundNum] = (type, value)
-            self.save()
+        self.transactions[roundNum] = (type, value)
+        self.save()
 
     def history(self):
         for key in self.transactions:

@@ -63,13 +63,12 @@ while True:
 
     #Split the input into args
     args = input.split()
-    args[0] = args[0].lower()
 
     if len(args) == 1:
         args[0] = args[0].lower()
         
         if args[0] == "b" or args[0] == "balance":
-            self.node.account.getBalance()
+            node.account.getBalance()
 
         elif args[0] == "f" or args[0] == "fail":
             node.fail()
@@ -78,6 +77,7 @@ while True:
             node.unfail()
             
     elif len(args) == 2:
+        args[0] = args[0].lower()
         #Make sure second arg is a numberical value
         if helper.isNumber(args[1]):
             amount = float(args[1])
@@ -85,7 +85,6 @@ while True:
             if args[0] == "d" or args[0] == "deposit":
                 node.initPaxos(value = (Log.DEPOSIT, amount))
             
-
             elif args[0] == "w" or args[0] == "withdraw":
                 node.initPaxos(value = (Log.WITHDRAW, amount))
 
