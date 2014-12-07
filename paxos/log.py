@@ -43,11 +43,11 @@ class Log():
             print '[ EMPTY ]'
         
         for i in xrange(0, len(self.transactions)):
-            if self.transactions[i] == log.DEPOSIT:
-                print '\nDeposit:  ${0}'.format(self.transactions[i].value)
+            if self.transactions[i][0] == Log.DEPOSIT:
+                print 'Deposit:  ${0}'.format(self.transactions[i][1])
 
-            elif self.transactions[i].type == Log.WITHDRAW:
-                print '\nWithdraw: ${0}'.format(self.transactions[i].value)
+            elif self.transactions[i][0] == Log.WITHDRAW:
+                print 'Withdraw: ${0}'.format(self.transactions[i][1])
 
 
     def __str__(self):
@@ -63,6 +63,7 @@ if __name__ == '__main__':
     l.appendTransaction(Log.WITHDRAW, 200, 2)
     l.appendTransaction(Log.WITHDRAW, 300, 3)
     l.appendTransaction(Log.DEPOSIT, 700, 4)
+    l.history()
     print l
 
 
