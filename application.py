@@ -1,22 +1,31 @@
 #!/usr/bin/python
 
-import sys
+from sys import argv, exit
 import threading
 import time
 import helper
+import signal
 from paxos.node import Node
 from paxos.log import Log
 
 
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C!')
+    os.kill(getpid(), signal.SIGTERM)
+    exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
+
 #Get the arguments
-if len(sys.argv) != 1:
+if len(argv) != 3:
     print ""
-    print "Usage: %s <port>" % str(sys.argv[0])
+    print "Usage: %s <ip> <port>" % str(argv[0])
     print ""
-    sys.exit(0)
+    exit(0)
 
 #Create Node object
-node = Node()
+node = Node(argv[1], int(argv[2]))
 node.daemon = True
 node.start()
 
@@ -32,7 +41,7 @@ while True:
     
     #End application
     if input == "quit":
-        sys.exit(0)
+        exit(0)
     
     if input == "help":
         print "\n------------------------------------------------\n"
@@ -74,14 +83,14 @@ while True:
             amount = float(args[1])
             
             if args[0] == "d" or args[0] == "deposit":
-                self.node.initPaxos(value = (Log.DEPOSIT, amount))
+                node.initPaxos(value = (Log.DEPOSIT, amount))
             
 
             elif args[0] == "w" or args[0] == "withdraw":
-                self.node.initPaxos(value = (Log.WITHDRAW, amount))
+                node.initPaxos(value = (Log.WITHDRAW, amount))
 
             elif args[0] == "p" or args[0] == "print":
-                self.node.log.history()
+                node.log.history()
 
         else:
             print "Invalid amount"
