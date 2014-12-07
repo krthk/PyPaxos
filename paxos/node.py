@@ -58,7 +58,7 @@ class Node(threading.Thread):
         self.msgReceived = threading.Event()
         self.msgReceived.clear()
         
-        self.propsalCompleted = propsalCompleted
+        self.proposalCompleted = proposalCompleted
     
         self.messagePump = MessagePump(self.queue, self.msgReceived, owner = self, port = self.addr[1])
         self.messagePump.setDaemon(True)
