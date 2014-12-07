@@ -3,7 +3,7 @@
 import pickle
 
 class Log():
-    DEPOSIT    = 1
+    DEPOSIT    = 1 
     WITHDRAW   = 2
     
     def __init__(self):
