@@ -24,9 +24,12 @@ class Account(object):
             return True
         
         else:
-            print "Not enough funds available for this withdrawl"
+            print "Not enough funds available for this withdrawal"
             return False
-
+    
+    # Check if we have sufficient balance for withdrawal
+    def isSufficient(self, amount):
+        return self.balance >= amount
 
 
 

@@ -76,6 +76,9 @@ while True:
         elif args[0] == "u" or args[0] == "unfail":
             node.unfail()
             
+        elif args[0] == "p" or args[0] == "print":
+            node.log.history()
+
     elif len(args) == 2:
         args[0] = args[0].lower()
         #Make sure second arg is a numberical value
@@ -86,11 +89,10 @@ while True:
                 node.initPaxos(value = (Log.DEPOSIT, amount))
             
             elif args[0] == "w" or args[0] == "withdraw":
-                node.initPaxos(value = (Log.WITHDRAW, amount))
-
-            elif args[0] == "p" or args[0] == "print":
-                node.log.history()
-
+                if node.account.isSufficient(amount): 
+                    node.initPaxos(value = (Log.WITHDRAW, amount))
+                else: 
+                    print 'Not enough funds in your account. Sucker!'
         else:
             print "Invalid amount"
 

@@ -48,15 +48,16 @@ class Node(threading.Thread):
         
         self.paxosStates = {}
     
+        self.log = Log(ip, port)
+        self.account = Account()
+        self.account.balance = self.log.balance
+    
         self.queue = Queue.Queue()
         self.msgReceived = threading.Event()
         self.msgReceived.clear()
     
         self.messagePump = MessagePump(self.queue, self.msgReceived, owner = self, port = self.addr[1])
         self.messagePump.setDaemon(True)
-    
-        self.log = Log()
-        self.account = Account()
     
     
     # Called when thread is started
@@ -176,7 +177,7 @@ class Node(threading.Thread):
 #                 print '{0}: {1}'.format(self.addr, accept_msg)
                 for (source, _, _) in self.paxosStates[r].responses:
                     self.sendMessage(accept_msg, source)
-                    time.sleep(1)
+#                     time.sleep(1)
 
                 # Update the state corresponding to sending the accepts
                 newState = PaxosState(r, PaxosRole.PROPOSER, 
@@ -264,7 +265,7 @@ class Node(threading.Thread):
                 print self.serverSet
                 for server in self.serverSet:
                     self.sendMessage(decide_msg, server)
-                    time.sleep(1)
+#                     time.sleep(1)
 
                 # Update the state corresponding to sending the DECIDES
                 newState = PaxosState(r, PaxosRole.PROPOSER, 
