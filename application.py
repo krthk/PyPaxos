@@ -4,7 +4,6 @@ import sys
 import threading
 import time
 import helper
-from account import Account
 from paxos.node import Node
 
 
@@ -14,10 +13,6 @@ if len(sys.argv) != 1:
     print "Usage: %s <port>" % str(sys.argv[0])
     print ""
     sys.exit(0)
-
-
-#Create Account object
-account = Account()
 
 #Create Node object
 node = Node()
@@ -63,7 +58,7 @@ while True:
         args[0] = args[0].lower()
         
         if args[0] == "b" or args[0] == "balance":
-            account.getBalance()
+            self.node.account.getBalance()
 
         elif args[0] == "f" or args[0] == "fail":
             node.fail()
@@ -79,15 +74,13 @@ while True:
             amount = float(args[1])
             
             if args[0] == "d" or args[0] == "deposit":
-                account.deposit(amount)
-                
-                node.createPaxosRound()
+                self.node.account.deposit(amount)
 
             elif args[0] == "w" or args[0] == "withdraw":
-                account.withdraw(amount)
+                self.node.account.withdraw(amount)
 
             elif args[0] == "p" or args[0] == "print":
-                "PRINT THE LOG"
+                self.node.log.history()
 
         else:
             print "Invalid amount"

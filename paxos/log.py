@@ -8,14 +8,6 @@ class Log():
     
     def __init__(self):
         self.transactions = {}
-    
-    def appendTransaction(self, type, value, roundNum):
-        if roundNum in self.transactions:
-            print "OVERWRITTING TRANSACTION #" + str(roundNum)
-        
-        self.transactions[self.roundNum] = (type, value)
-        self.save()
-    
 
     #Persist the log to disk
     def save(self):
@@ -36,12 +28,25 @@ class Log():
         except Exception as e:
             print e
 
+    def appendTransaction(self, type, value, roundNum):
+        if roundNum in self.transactions:
+            print "OVERWRITTING EXISTING TRANSACTION #" + str(roundNum)
+            
+            self.transactions[roundNum] = (type, value)
+            self.save()
+
+    def history(self):
+        for key in self.transactions:
+            if self.transactions[key].type == Log.DEPOSIT:
+                print '\nDeposit:  ${0}'.format(self.transactions[key].value)
+
+            elif self.transactions[key].type == Log.WITHDRAW:
+                print '\nWithdraw: ${0}'.format(self.transactions[key].value)
+
 
     def __str__(self):
         return ('Num transactions:       {0}\n'
-                'Next transaction num:   {1}\n'
-                'Transactions:           {2}\n'.format(len(self.transactions),
-                                                self.nextTransationNum,
+                'Transactions:           {1}\n'.format(len(self.transactions),
                                                 self.transactions))
 
 
