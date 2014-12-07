@@ -18,7 +18,7 @@ from ballot import Ballot
 
 class Node(threading.Thread):
     
-    def __init__(self, ip, port = 55555, config = 'config'):
+    def __init__(self, ip, port = 55555, config = 'config2'):
         threading.Thread.__init__(self)
         
         self.addr = (ip, port)
@@ -39,7 +39,11 @@ class Node(threading.Thread):
         # Compute the size of the majority quorum
         self.quorumSize = int(self.numServers/2)+1
         
-        self.lastRound = -1
+        # Use a set to maintain gaps with finished Paxos rounds. The next Paxos round will be the
+        # smallest item in the set. If the set is empty, then it is highestRound
+        self.setOfGaps = Set()
+        self.highestRound = 0
+        
         self.paxosStates = {}
     
         self.queue = Queue.Queue()
@@ -80,7 +84,7 @@ class Node(threading.Thread):
                 # Get the state corresponding to the current round
                 state = self.paxosStates[r]
                 
-                # Respond to the proposer with a promise not to accept any lower ballots
+                # Respond to the proposer with a PROMISE not to accept any lower ballots
                 if msg.ballot >= state.highestBallot:
                     promise_msg = Message(msg.round, 
                                           Message.ACCEPTOR_PROMISE, 
@@ -281,6 +285,9 @@ class Node(threading.Thread):
                                       msg.ballot,
                                       msg.metadata['value'])
                 self.paxosStates[r] = newState
+            
+            # Update the state to reflect that this round has been DECIDED
+            self.removeRound(r)
 
     # Initiate Paxos with a proposal to a quorum of servers
     def initPaxos(self, round, value = None, ballot = None):
@@ -301,7 +308,23 @@ class Node(threading.Thread):
                                              ballot,
                                              value)
         
-
+    # Get the next available round number 
+    def getNextRound(self):
+        if not self.setOfGaps: 
+            return self.highestRound
+        else:
+            return min(self.setOfGaps)
+        
+    # Update the rounds when a DECIDE has been made
+    def removeRound(self, r):
+        if r in self.setOfGaps: 
+            self.setOfGaps.remove(r)
+        elif r == self.highestRound:
+            self.highestRound += 1
+        else:
+            for i in xrange(self.highestRound, r):
+                self.setOfGaps.add(i)
+                self.highestRound = r+1
     
     # Returns a list of servers other than self that create a quorum
     def getQuorum(self):
