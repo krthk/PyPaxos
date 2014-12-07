@@ -20,7 +20,7 @@ from account import Account
 
 class Node(threading.Thread):
     
-    def __init__(self, ip, port = 55555, config = 'config2'):
+    def __init__(self, ip, port = 55555, config = 'config2', proposalCompleted = None):
         threading.Thread.__init__(self)
         
         self.addr = (ip, port)
@@ -47,6 +47,8 @@ class Node(threading.Thread):
         self.highestRound = 0
         
         self.paxosStates = {}
+        
+        self.lockValue = None
     
         self.log = Log(ip, port)
         self.account = Account()
@@ -55,6 +57,8 @@ class Node(threading.Thread):
         self.queue = Queue.Queue()
         self.msgReceived = threading.Event()
         self.msgReceived.clear()
+        
+        self.propsalCompleted = propsalCompleted
     
         self.messagePump = MessagePump(self.queue, self.msgReceived, owner = self, port = self.addr[1])
         self.messagePump.setDaemon(True)
@@ -287,6 +291,9 @@ class Node(threading.Thread):
                 elif value_type == Log.WITHDRAW:
                     self.account.withdraw(value_amount)
                 
+                if (value_type, value_amount, value_hash) == self.lockValue:
+                    self.proposalCompleted.set()
+                
 
         elif msg.messageType == Message.PROPOSER_DECIDE:
             print '{0}: Received a DECIDE message'.format(self.addr)
@@ -321,6 +328,9 @@ class Node(threading.Thread):
             elif value_type == Log.WITHDRAW:
                 self.account.withdraw(value_amount)
 
+            if (value_type, value_amount, value_hash) == self.lockValue:
+                self.proposalCompleted.set()
+
     # Initiate Paxos with a proposal to a quorum of servers
     def initPaxos(self, round = None, value = None, ballot = None):
         if round == None:
@@ -331,6 +341,8 @@ class Node(threading.Thread):
             if round in self.paxosStates:
                 print '{0}: Found a previous ballot for this round. Setting current ballot greater than prev ballot.'.format(self.addr)
                 ballot.set_n(self.paxosStates[round].highestBallot.n+1)
+
+        self.lockValue = value
 
         prop_msg = Message(round, Message.PROPOSER_PREPARE, self.addr, ballot)
         
