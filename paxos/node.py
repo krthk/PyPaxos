@@ -14,6 +14,8 @@ from paxosState import PaxosState
 from paxosState import PaxosRole
 from message import Message
 from ballot import Ballot
+from log import Log
+from account import Account
 
 
 class Node(threading.Thread):
@@ -52,6 +54,10 @@ class Node(threading.Thread):
     
         self.messagePump = MessagePump(self.queue, self.msgReceived, owner = self, port = self.addr[1])
         self.messagePump.setDaemon(True)
+    
+        self.log = Log()
+        self.account = Account()
+    
     
     # Called when thread is started
     def run(self):
@@ -183,8 +189,9 @@ class Node(threading.Thread):
             # If we receive a NACK message from any of the servers, abandon this round
             # because we are never going to succeed with the current ballot number
             
-            # Add code to implement the above
-            pass
+            waitTime = random.uniform(1.0, 5.0, msg.value, msg.ballot)
+            timer = threading.timer(waitTime, self.retryPaxos)
+            print 'Received NACK. Waiting {0} seconds'.format(waitTime)
                 
         elif msg.messageType == Message.PROPOSER_ACCEPT:
             # Try to get the state for the acceptor
@@ -265,6 +272,14 @@ class Node(threading.Thread):
                                       state.highestBallot,
                                       state.value)
                 self.paxosStates[r] = newState
+                
+                # Update the state to reflect that this round has been DECIDED
+                self.removeRound(r)
+
+                # Add the result to the log
+                print "*** UPDATE THE TRANSACTION TYPE AND VALUE ***"
+                self.log.appendTransaction(Log.DEPOSIT, 100, r)
+                self.account.deposit(100)
 
         elif msg.messageType == Message.PROPOSER_DECIDE:
             print '{0}: Received a DECIDE message'.format(self.addr)
@@ -288,6 +303,11 @@ class Node(threading.Thread):
             
             # Update the state to reflect that this round has been DECIDED
             self.removeRound(r)
+                
+            # Add the result to the log
+            print "*** UPDATE THE TRANSACTION TYPE AND VALUE"
+            self.log.appendTransaction(Log.DEPOSIT, 100, r)
+            self.account.deposit(100)
 
     # Initiate Paxos with a proposal to a quorum of servers
     def initPaxos(self, round, value = None, ballot = None):

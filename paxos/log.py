@@ -14,9 +14,10 @@ class Log():
         try:
             with open('log.dat', 'wb') as file:
                 pickle.dump(self.transactions, file)
+                return True
 
         except Exception as e:
-            print e
+            return False
 
     #Read the log from disk
     def restore(self):
@@ -24,9 +25,10 @@ class Log():
             with open('log.dat', 'rb') as file:
                 self.transactions = pickle.load(file)
                 print "Found existing log:\n", self, "\n"
+                return True
 
         except Exception as e:
-            print e
+            return False
 
     def appendTransaction(self, type, value, roundNum):
         if roundNum in self.transactions:
