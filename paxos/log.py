@@ -58,10 +58,10 @@ class Log():
 
         for key in sorted(iter(self.transactions)):
             if self.transactions[key][0] == Log.DEPOSIT:
-                print 'Deposit:  ${0}'.format(self.transactions[key][1])
+                print '{0} - Deposit:  ${1}'.format(key, self.transactions[key][1])
 
             elif self.transactions[key][0] == Log.WITHDRAW:
-                print 'Withdraw: ${0}'.format(self.transactions[key][1])
+                print '{0} - Withdraw: ${1}'.format(key, self.transactions[key][1])
 
     def __str__(self):
         return ('Num transactions:       {0}\n'

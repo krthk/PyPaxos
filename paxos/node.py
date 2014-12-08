@@ -42,18 +42,20 @@ class Node(threading.Thread):
         # Compute the size of the majority quorum
         self.quorumSize = int(self.numServers/2)+1
         
+        self.log = Log(ip, port)
+        self.account = Account()
+        self.account.balance = self.log.balance
+    
         # Use a set to maintain gaps with finished Paxos rounds. The next Paxos round will be the
         # smallest item in the set. If the set is empty, then it is highestRound
         self.setOfGaps = Set()
         self.highestRound = 0
+        self.initSetOfGaps()
+        print 'Gap set', self.setOfGaps
         
         self.paxosStates = {}
         
         self.lockValue = None
-    
-        self.log = Log(ip, port)
-        self.account = Account()
-        self.account.balance = self.log.balance
     
         self.queue = Queue.Queue()
         self.msgReceived = threading.Event()
@@ -365,6 +367,7 @@ class Node(threading.Thread):
         t.start()
         
     # Try more servers periodically if our initial attempt at getting a quorum was unsuccessful
+    
     def extendPromiseQuorum(self, round, prop_msg, sleep_time = 5):
         while True:
             time.sleep(sleep_time)
@@ -423,6 +426,18 @@ class Node(threading.Thread):
         data = pickle.dumps(msg)
         self.socket.sendto(data, addr)
     
+    def initSetOfGaps(self):
+        if not self.log.transactions: return
+        
+        rounds_decided = sorted(iter(self.log.transactions))
+        print 'rounds_decided', rounds_decided
+        self.highestRound = rounds_decided[-1] + 1
+        
+        self.setOfGaps |= Set(xrange(rounds_decided[0]))
+        for i in xrange(len(rounds_decided)-1):
+            self.setOfGaps |= Set(xrange(rounds_decided[i]+1, rounds_decided[i+1]))
+            
+            
     # Stop all network activity
     def fail(self):
         if not self.messagePump.isRunning:
