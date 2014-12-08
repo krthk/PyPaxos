@@ -60,7 +60,7 @@ class Node(threading.Thread):
         
         self.proposalCompleted = proposalCompleted
     
-        self.messagePump = MessagePump(self.queue, self.msgReceived, owner = self, port = self.addr[1])
+        self.messagePump = MessagePump(self.queue, self.msgReceived, owner = self, ip = self.addr[0], port = self.addr[1])
         self.messagePump.setDaemon(True)
     
     

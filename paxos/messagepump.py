@@ -15,13 +15,14 @@ class MessagePump(threading.Thread):
     the main thread.
     '''
     
-    def __init__(self, queue, msgReceived, owner = None, port = 55555):
+    def __init__(self, queue, msgReceived, owner = None, ip = '127.0.0.1', port = 55555):
         '''
         The MessagePump binds itself to port and appends all the messages it receives
         to a queue
         '''
         threading.Thread.__init__(self)
         self.owner = owner
+        self.ip = ip
         self.port = port
         self.queue = queue
         self.msgReceived = msgReceived
@@ -29,11 +30,11 @@ class MessagePump(threading.Thread):
         self.isRunning = True
     
     def run(self):
-        print 'Starting message pump and listening to port', self.port
+        print 'Starting message pump and listening to {0}:{1}'.format(self.ip, self.port)
 
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.socket.bind(('localhost', self.port))
+            self.socket.bind((self.ip, self.port))
             self.isRunning = True
         
             #self.socket.settimeout( timeout )
