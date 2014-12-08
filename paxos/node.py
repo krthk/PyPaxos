@@ -51,7 +51,9 @@ class Node(threading.Thread):
         self.paxosStates = {}
         
         self.lockValue = None
-    
+        
+        self.hasFailed = False
+        
         self.queue = Queue.Queue()
         self.msgReceived = threading.Event()
         self.msgReceived.clear()
@@ -226,7 +228,7 @@ class Node(threading.Thread):
             if r not in self.paxosStates: 
                 return 
             
-            # Ignore is we receive a NACK for an earlier proposal
+            # Ignore if we receive a NACK for an earlier proposal
             if msg.ballot < self.paxosStates[r].highestBallot:
                 return
             
@@ -476,7 +478,6 @@ class Node(threading.Thread):
                 return
 #                 thread.exit()
 
-    
     #After receiving a NACK, retry with the lowest available round and the failed value
     def retryPaxos(self, round, failedValue, highestBallot):
 #         newRound = self.getNextRound()
@@ -508,9 +509,12 @@ class Node(threading.Thread):
     
     # Serialize and send the given message msg to the given address addr
     def sendMessage(self, msg, addr):
+        if self.hasFailed: 
+            return
+        
         print '{0}: Sent a message to {1}'.format(self.addr, addr)
         data = pickle.dumps(msg)
-        time.sleep(random.uniform(0.0, 1.0))
+#         time.sleep(random.uniform(0.0, 1.0))
         self.socket.sendto(data, addr)
     
     def initSetOfGaps(self):
@@ -536,24 +540,29 @@ class Node(threading.Thread):
             for server in self.serverSet:
                 self.sendMessage(log_msg, server)
 
-        
     # Stop all network activity
     def fail(self):
-        if not self.messagePump.isRunning:
-            print 'Already failed'
+        assert self.hasFailed != self.messagePump.isRunning
+        
+        if self.hasFailed:
+            print '{0}: Already failed'.format(self.addr)
         
         else:
             self.messagePump.isRunning = False
-            print 'Halting activity'
+            self.hasFailed = True
+            print '{0}: Halting activity'.format(self.addr)
 
     # Resume network activity
     def unfail(self):
-        if self.messagePump.isRunning:
-            print 'Already running'
+        assert self.hasFailed != self.messagePump.isRunning
+
+        if not self.hasFailed:
+            print '{0}: Already running'.format(self.addr)
         
         else:
             self.messagePump.isRunning = True
-            print 'Resuming activity'
+            self.hasFailed = False
+            print '{0}: Resuming activity'.format(self.addr)
 
 if __name__ == '__main__':
     n1 = Node('127.0.0.1', 55555, 'config2')

@@ -17,16 +17,21 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-# Get the arguments
-if len(argv) != 3:
-    print ''
-    print 'Usage: %s <ip> <port>' % str(argv[0])
-    print ''
-    exit(0)
-
 # Threading event for when our proposal is accepted
 proposalCompleted = threading.Event()
 proposalCompleted.set()
+
+# Get the arguments
+if len(argv) == 3:
+    node = Node(argv[1], int(argv[2]), proposalCompleted = proposalCompleted)
+elif len(argv) == 4:
+    node = Node(argv[1], int(argv[2]), config = argv[3], proposalCompleted = proposalCompleted)
+
+else:
+    print ''
+    print 'Usage: {0} <ip> <port> [config]'.format(str(argv[0]))
+    print ''
+    exit(0)
 
 # Create Node object
 node = Node(argv[1], int(argv[2]), proposalCompleted = proposalCompleted)
@@ -36,7 +41,8 @@ node.start()
 # Wait a moment for the node to get its socket set up
 time.sleep(1)
 
-
+# Sync when you start
+node.logSync(node.log.transactions)
 
 # Main loop of application
 while True:

@@ -48,11 +48,10 @@ class MessagePump(threading.Thread):
         
         # Listen forever on the port and add received messages to the queue
         while True:
-            if self.isRunning:
                 data, addr = self.socket.recvfrom(4096)
-                self.queue.put((data, addr))
-#                 print 'Received from ', addr
-                self.msgReceived.set()
+                if self.isRunning:
+                    self.queue.put((data, addr))
+                    self.msgReceived.set()
     
 if __name__ == '__main__':
     queue = Queue.Queue()
@@ -69,6 +68,4 @@ if __name__ == '__main__':
             data, addr = queue.get()
             print addr, data
         msgReceived.clear()
-#         time.sleep(5)
-        
     
