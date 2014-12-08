@@ -21,13 +21,17 @@ class PaxosState(object):
     ACCEPTOR_DECIDED            = 5
     LEARNER_DECIDED             = 6
     
-    def __init__(self, round, role, stage, highestBallot = None, value = None):
+    def __init__(self, round, role, stage, highestBallot = None, value = None, metadata = None):
         self.round = round
         self.role = role
         self.stage = stage
         self.highestBallot = highestBallot
         self.value = value
         self.responses = []
+        if metadata == None:
+            self.metadata = {}
+        else: 
+            self.metadata = metadata
 
     def __str__(self):
         return ('Round:          {0}\n'

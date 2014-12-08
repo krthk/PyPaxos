@@ -3,6 +3,7 @@
 import sys
 import socket
 import threading
+import thread
 import time
 import Queue
 import pickle
@@ -159,7 +160,8 @@ class Node(threading.Thread):
                 # Get the value corresponding to the highest ballot
                 highestBallot, highestValue = None, None
                 for (_, ballot, value) in state.responses:
-                    if highestBallot == None:
+                    if not ballot: continue
+                    if not highestBallot:
                         highestBallot, highestValue = ballot, value
                     elif ballot > highestBallot:
                         highestBallot, highestValue = ballot, value
@@ -347,14 +349,45 @@ class Node(threading.Thread):
         prop_msg = Message(round, Message.PROPOSER_PREPARE, self.addr, ballot)
         
         print '{0}: Initiating Paxos for round {1}'.format(self.addr, round)
-        for server in self.getQuorum():
-            self.sendMessage(prop_msg, server)
-    
         self.paxosStates[round] = PaxosState(round, PaxosRole.PROPOSER, 
                                              PaxosState.PROPOSER_SENT_PROPOSAL,  
                                              ballot,
-                                             value)
+                                             value, 
+                                             {'promise_quorum_servers':Set()})
 
+        for server in self.getQuorum():
+            self.sendMessage(prop_msg, server)
+            self.paxosStates[round].metadata['promise_quorum_servers'].add(server)
+    
+        t = threading.Thread(name='promise_thread', 
+                             target=self.extendPromiseQuorum, 
+                             args=[round, prop_msg, 5])
+        t.start()
+        
+    # Try more servers periodically if our initial attempt at getting a quorum was unsuccessful
+    def extendPromiseQuorum(self, round, prop_msg, sleep_time = 5):
+        while True:
+            time.sleep(sleep_time)
+            
+            # The original paxos for this round failed/timed-out. Stop sending more promises for this round.
+            if round not in self.paxosStates: 
+                return
+            
+            state = self.paxosStates[round]
+            if state.stage == PaxosState.PROPOSER_SENT_PROPOSAL:
+                diff_set = self.serverSet - state.metadata['promise_quorum_servers']
+                if not diff_set: return
+                
+                server = diff_set.pop()
+                state.metadata['promise_quorum_servers'].add(server)
+
+                print '{0}: Did not find a PROMISE quorum yet. Trying more servers.'.format(self.addr)
+                self.sendMessage(prop_msg, server)
+            else: 
+                return
+#                 thread.exit()
+
+    
     #After receiving a NACK, retry with the lowest available round and the failed value
     def retryPaxos(self, failedValue, highestBallot):
         newRound = self.getNextRound()
