@@ -15,14 +15,17 @@ class MessagePump(threading.Thread):
     the main thread.
     '''
     
-    def __init__(self, queue, msgReceived, owner = None, ip = '127.0.0.1', port = 55555):
+    def __init__(self, queue, msgReceived, owner = None, ip = None, port = 55555):
         '''
         The MessagePump binds itself to port and appends all the messages it receives
         to a queue
         '''
         threading.Thread.__init__(self)
         self.owner = owner
-        self.ip = ip
+        if ip == None:
+            self.ip = socket.gethostbyname(socket.gethostname())
+        else:
+            self.ip = ip
         self.port = port
         self.queue = queue
         self.msgReceived = msgReceived
