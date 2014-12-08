@@ -24,6 +24,7 @@ class MessagePump(threading.Thread):
         self.owner = owner
         if ip == None:
             self.ip = socket.gethostbyname(socket.gethostname())
+            print socket.gethostbyname(socket.gethostname())
         else:
             self.ip = ip
         self.port = port
