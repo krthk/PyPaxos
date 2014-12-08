@@ -34,7 +34,6 @@ else:
     exit(0)
 
 # Create Node object
-node = Node(argv[1], int(argv[2]), proposalCompleted = proposalCompleted)
 node.daemon = True
 node.start()
 
