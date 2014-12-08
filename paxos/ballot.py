@@ -45,6 +45,8 @@ class Ballot():
             return False
 
     def __eq__(self, other):
+        if not isinstance(other, Ballot):
+            return False
         return self.n == other.n and self.nodeIdentifier == other.nodeIdentifier
 
     def __ne__(self, other):
