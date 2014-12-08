@@ -20,6 +20,7 @@ class PaxosState(object):
     PROPOSER_SENT_DECIDE        = 4
     ACCEPTOR_DECIDED            = 5
     LEARNER_DECIDED             = 6
+    PROPOSER_RECEIVED_NACK      = 7
     
     def __init__(self, round, role, stage, highestBallot = None, value = None, metadata = None):
         self.round = round

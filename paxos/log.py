@@ -11,7 +11,7 @@ class Log():
         self.transactions = {}
         self.balance = 0
         self.restore()
-
+        
     #Persist the log to disk
     def save(self):
         try:
@@ -27,10 +27,9 @@ class Log():
         try:
             with open(self.filename, 'rb') as file:
                 self.transactions = pickle.load(file)
-                print 'Found existing log: \n{0}'.format(self)
+                print 'Found existing log \'{0}\' with {1} transactions \n'.format(self.filename, len(self.transactions))
                 
                 for key in sorted(iter(self.transactions)):
-                    print transaction
                     if self.transactions[key][0] == Log.DEPOSIT:
                         self.balance += self.transactions[key][1]
                 
@@ -43,6 +42,8 @@ class Log():
             return False
 
     def addTransaction(self, round, type, value, hash):
+        if round in self.transactions: return
+        
         if type == Log.DEPOSIT:
             self.balance += value
 
@@ -62,6 +63,8 @@ class Log():
 
             elif self.transactions[key][0] == Log.WITHDRAW:
                 print '{0} - Withdraw: ${1}'.format(key, self.transactions[key][1])
+        
+        print 'Balance: {0}'.format(self.balance)
 
     def __str__(self):
         return ('Num transactions:       {0}\n'

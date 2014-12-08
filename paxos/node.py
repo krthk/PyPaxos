@@ -16,8 +16,6 @@ from paxosState import PaxosRole
 from message import Message
 from ballot import Ballot
 from log import Log
-from account import Account
-
 
 class Node(threading.Thread):
     
@@ -43,15 +41,12 @@ class Node(threading.Thread):
         self.quorumSize = int(self.numServers/2)+1
         
         self.log = Log(ip, port)
-        self.account = Account()
-        self.account.balance = self.log.balance
     
         # Use a set to maintain gaps with finished Paxos rounds. The next Paxos round will be the
         # smallest item in the set. If the set is empty, then it is highestRound
         self.setOfGaps = Set()
         self.highestRound = 0
         self.initSetOfGaps()
-        print 'Gap set', self.setOfGaps
         
         self.paxosStates = {}
         
@@ -93,6 +88,18 @@ class Node(threading.Thread):
 
         # Check if it is a PROPOSE message
         if msg.messageType == Message.PROPOSER_PREPARE:
+            # Check if we have already decided a value for this round
+            if r in self.log.transactions:
+                # Return a NACK and the value if this round has already been decided
+                nack_msg = Message(msg.round, 
+                                   Message.ACCEPTOR_NACK, 
+                                   self.addr,
+                                   msg.ballot, 
+                                   {'decided': True, 'highestballot': None, 'value': self.log.transactions[r]})
+                print '{0}: Sending a NACK to {1}'.format(self.addr, msg.source)
+                self.sendMessage(nack_msg, msg.source)
+                return
+                     
             # Check if we already have sent/received a message for this round 
             if r in self.paxosStates:
                 # Get the state corresponding to the current round
@@ -195,11 +202,45 @@ class Node(threading.Thread):
                 self.paxosStates[r] = newState
         
         elif msg.messageType == Message.ACCEPTOR_NACK:
-            # If we receive a NACK message from any of the servers, abandon this round
-            # because we are never going to succeed with the current ballot number
+            # If we receive a NACK indicating that the round has already been decided, update
+            # our log and start a new round of Paxos for our original value
+            if 'decided' in msg.metadata:
+                if msg.round in self.log.transactions: 
+                    return
+                
+                newState = PaxosState(r, PaxosRole.LEARNER, 
+                                      PaxosState.LEARNER_DECIDED,  
+                                      msg.metadata['highestballot'],
+                                      msg.metadata['value'])
+                self.paxosStates[r] = newState
+                self.removeRound(r)
+                self.initPaxos(value = self.lockValue)
+                
+                # Add the result to the log
+                value_type, value_amount, value_hash = msg.metadata['value'][0], msg.metadata['value'][1], msg.metadata['value'][2]
+                self.log.addTransaction(r, value_type, value_amount, value_hash)
+          
+                return
+
+            # If we receive a generic NACK for a state which we have not tracked, ignore
+            if r not in self.paxosStates: 
+                return 
             
+            # Ignore is we receive a NACK for an earlier proposal
+            if msg.ballot < self.paxosStates[r].highestBallot:
+                return
+            
+            # If we have already processed an earlier NACK for the same (ballot,round), ignore this NACK
+            if self.paxosStates[r].stage == PaxosState.PROPOSER_RECEIVED_NACK:
+                return
+            
+            # If we receive a generic NACK message from any of the servers, abandon this round
+            # because we are never going to succeed with the current ballot number
+            self.paxosStates[r].stage = PaxosState.PROPOSER_RECEIVED_NACK
+
             waitTime = random.uniform(1.0, 5.0)
-            timer = threading.timer(waitTime, self.retryPaxos, [msg.metadata['value'], msg.ballot])
+            timer = threading.Timer(waitTime, self.retryPaxos, [r, self.lockValue, msg.ballot])
+            timer.start()
             print '{0}: Received NACK. Waiting {1} seconds and retrying'.format(self.addr, waitTime)
                 
         elif msg.messageType == Message.PROPOSER_ACCEPT:
@@ -289,14 +330,12 @@ class Node(threading.Thread):
                 value_type, value_amount, value_hash = msg.metadata['value'][0], msg.metadata['value'][1], msg.metadata['value'][2]
                 self.log.addTransaction(r, value_type, value_amount, value_hash)
           
-                if value_type == Log.DEPOSIT:
-                    self.account.deposit(value_amount)
-
-                elif value_type == Log.WITHDRAW:
-                    self.account.withdraw(value_amount)
-                
+                # If the value we just decided on is the value our user is waiting on, then we are done
+                # Else, we need to start another round to get consensus on our original value
                 if (value_type, value_amount, value_hash) == self.lockValue:
                     self.proposalCompleted.set()
+                else:
+                    self.initPaxos(value = self.lockValue)
                 
 
         elif msg.messageType == Message.PROPOSER_DECIDE:
@@ -326,14 +365,19 @@ class Node(threading.Thread):
             value_type, value_amount, value_hash = msg.metadata['value'][0], msg.metadata['value'][1], msg.metadata['value'][2]
             self.log.addTransaction(r, value_type, value_amount, value_hash)
 
-            if value_type == Log.DEPOSIT:
-                self.account.deposit(value_amount)
-
-            elif value_type == Log.WITHDRAW:
-                self.account.withdraw(value_amount)
-
+            # If some other proposer decided on our value, then release the application lock
+            # Else, see if there is any state still tracking our original value. If not, start a fresh 
+            # round of paxos for our original value
+            if not self.lockValue: 
+                return
+            
             if (value_type, value_amount, value_hash) == self.lockValue:
                 self.proposalCompleted.set()
+            else:
+                for key in self.paxosStates:
+                    if self.paxosStates[key].value == self.lockValue:
+                        return
+                self.initPaxos(value = self.lockValue)
 
     # Initiate Paxos with a proposal to a quorum of servers
     def initPaxos(self, round = None, value = None, ballot = None):
@@ -359,8 +403,11 @@ class Node(threading.Thread):
 
         for server in self.getQuorum():
             self.sendMessage(prop_msg, server)
-            self.paxosStates[round].metadata['promise_quorum_servers'].add(server)
-    
+            if 'promise_quorum_servers' in self.paxosStates[round].metadata:
+                self.paxosStates[round].metadata['promise_quorum_servers'].add(server)
+            else:
+                self.paxosStates[round].metadata['promise_quorum_servers'] = Set([server])
+                
         t = threading.Thread(name='promise_thread', 
                              target=self.extendPromiseQuorum, 
                              args=[round, prop_msg, 5])
@@ -376,7 +423,16 @@ class Node(threading.Thread):
             if round not in self.paxosStates: 
                 return
             
+            # Return if the value gets decided by some other server
+            if round in self.log.transactions: 
+                return
+            
             state = self.paxosStates[round]
+            
+            # If the proposer received a NACK and abandoned our corresponding round, we should also abandon
+            if state.stage == PaxosState.PROPOSER_RECEIVED_NACK: 
+                return
+            
             if state.stage == PaxosState.PROPOSER_SENT_PROPOSAL:
                 diff_set = self.serverSet - state.metadata['promise_quorum_servers']
                 if not diff_set: return
@@ -384,7 +440,8 @@ class Node(threading.Thread):
                 server = diff_set.pop()
                 state.metadata['promise_quorum_servers'].add(server)
 
-                print '{0}: Did not find a PROMISE quorum yet. Trying more servers.'.format(self.addr)
+                print '{0}: Did not find a PROMISE quorum yet. Trying more servers for round {1}.'.format(self.addr, round)
+                prop_msg.ballot = state.highestBallot
                 self.sendMessage(prop_msg, server)
             else: 
                 return
@@ -392,11 +449,11 @@ class Node(threading.Thread):
 
     
     #After receiving a NACK, retry with the lowest available round and the failed value
-    def retryPaxos(self, failedValue, highestBallot):
-        newRound = self.getNextRound()
-        ballot = Ballot(self.addr[0], self.addr[1], highestballot.n+1)
-            
-        self.initPaxos(newRound, failedValue, ballot)
+    def retryPaxos(self, round, failedValue, highestBallot):
+#         newRound = self.getNextRound()
+        ballot = Ballot(self.addr[0], self.addr[1], highestBallot.n+1)
+        print '{0}: Retrying round {1} with new ballot {2}'.format(self.addr, round, ballot)
+        self.initPaxos(round, failedValue, ballot)
     
     # Get the next available round number 
     def getNextRound(self):
@@ -424,13 +481,13 @@ class Node(threading.Thread):
     def sendMessage(self, msg, addr):
         print '{0}: Sent a message to {1}'.format(self.addr, addr)
         data = pickle.dumps(msg)
+        time.sleep(random.uniform(0.0, 2.0))
         self.socket.sendto(data, addr)
     
     def initSetOfGaps(self):
         if not self.log.transactions: return
         
         rounds_decided = sorted(iter(self.log.transactions))
-        print 'rounds_decided', rounds_decided
         self.highestRound = rounds_decided[-1] + 1
         
         self.setOfGaps |= Set(xrange(rounds_decided[0]))

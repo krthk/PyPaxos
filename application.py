@@ -75,7 +75,7 @@ while True:
         args[0] = args[0].lower()
         
         if args[0] == "b" or args[0] == "balance":
-            node.account.getBalance()
+            print node.log.balance
 
         elif args[0] == "f" or args[0] == "fail":
             node.fail()
@@ -99,7 +99,7 @@ while True:
                 node.initPaxos(value = (Log.DEPOSIT, amount, h))
             
             elif args[0] == "w" or args[0] == "withdraw":
-                if node.account.isSufficient(amount):
+                if node.log.balance >= amount:
                     proposalCompleted.clear()
                     node.initPaxos(value = (Log.WITHDRAW, amount, h))
                 else: 
