@@ -12,13 +12,14 @@ class Message():
     
     PROPOSER_DECIDE     = 6
     
+    LOG_SYNC_REQUEST    = 7
+    LOG_SYNC_RESPONSE   = 8
         
     def __init__(self, round, messageType, source, ballot = None, metadata = None):
         self.source = source
         self.round = round
         self.ballot = ballot
         self.messageType = messageType
-#         self.value = value
         self.metadata = metadata
     
     def __str__(self):

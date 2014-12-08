@@ -314,7 +314,6 @@ class Node(threading.Thread):
                 print self.serverSet
                 for server in self.serverSet:
                     self.sendMessage(decide_msg, server)
-#                     time.sleep(1)
 
                 # Update the state corresponding to sending the DECIDES
                 newState = PaxosState(r, PaxosRole.PROPOSER, 
@@ -378,6 +377,36 @@ class Node(threading.Thread):
                     if self.paxosStates[key].value == self.lockValue:
                         return
                 self.initPaxos(value = self.lockValue)
+
+        elif msg.messageType == Message.LOG_SYNC_REQUEST:
+            print '{0}: Received a SYNC REQUEST message from {1}'.format(self.addr, msg.source)
+            msg_log = msg.metadata['log']
+            response = {}
+            for key in self.log.transactions:
+                if key not in msg_log:
+                    response[key] = self.log.transactions[key]
+            if response:
+                print '{0}: Sent a SYNC RESPONSE message to {1}'.format(self.addr, msg.source)
+                self.logSync(response, msg.source, Message.LOG_SYNC_RESPONSE)
+            
+            for key in msg_log:
+                if key not in self.log.transactions:
+                    self.log.addTransaction(key, msg_log[key][0], msg_log[key][1], msg_log[key][2])
+            
+            # Don't forget to reinit the set of gaps
+            self.initSetOfGaps()
+                
+        elif msg.messageType == Message.LOG_SYNC_RESPONSE:
+            print '{0}: Received a SYNC RESPONSE message from {1}'.format(self.addr, msg.source)
+            msg_log = msg.metadata['log']
+            for key in msg_log:
+                if key not in self.log.transactions:
+                    self.log.addTransaction(key, msg_log[key][0], msg_log[key][1], msg_log[key][2])
+            
+            # Don't forget to reinit the set of gaps
+            self.initSetOfGaps()
+                
+            
 
     # Initiate Paxos with a proposal to a quorum of servers
     def initPaxos(self, round = None, value = None, ballot = None):
@@ -481,7 +510,7 @@ class Node(threading.Thread):
     def sendMessage(self, msg, addr):
         print '{0}: Sent a message to {1}'.format(self.addr, addr)
         data = pickle.dumps(msg)
-        time.sleep(random.uniform(0.0, 2.0))
+        time.sleep(random.uniform(0.0, 1.0))
         self.socket.sendto(data, addr)
     
     def initSetOfGaps(self):
@@ -494,24 +523,37 @@ class Node(threading.Thread):
         for i in xrange(len(rounds_decided)-1):
             self.setOfGaps |= Set(xrange(rounds_decided[i]+1, rounds_decided[i+1]))
             
-            
+    def logSync(self, log, addr = None, messageType = Message.LOG_SYNC_REQUEST):
+        log_msg = Message(None, 
+                          messageType,
+                          self.addr,
+                          None, 
+                          {'log': log})
+        
+        if addr:
+            self.sendMessage(log_msg, addr)
+        else:
+            for server in self.serverSet:
+                self.sendMessage(log_msg, server)
+
+        
     # Stop all network activity
     def fail(self):
         if not self.messagePump.isRunning:
-            print "Already failed"
+            print 'Already failed'
         
         else:
             self.messagePump.isRunning = False
-            print "Halting activity"
+            print 'Halting activity'
 
     # Resume network activity
     def unfail(self):
         if self.messagePump.isRunning:
-            print "Already running"
+            print 'Already running'
         
         else:
             self.messagePump.isRunning = True
-            print "Resuming activity"
+            print 'Resuming activity'
 
 if __name__ == '__main__':
     n1 = Node('127.0.0.1', 55555, 'config2')
