@@ -22,14 +22,14 @@ proposalCompleted = threading.Event()
 proposalCompleted.set()
 
 # Get the arguments
-if len(argv) == 3:
-    node = Node(argv[1], int(argv[2]), proposalCompleted = proposalCompleted)
-elif len(argv) == 4:
-    node = Node(argv[1], int(argv[2]), config = argv[3], proposalCompleted = proposalCompleted)
+if len(argv) == 5:
+    node = Node(argv[1], int(argv[2]), argv[3], int(argv[4]), proposalCompleted = proposalCompleted)
+elif len(argv) == 6:
+    node = Node(argv[1], int(argv[2]), argv[3], int(argv[4]), config = argv[5], proposalCompleted = proposalCompleted)
 
 else:
     print ''
-    print 'Usage: {0} <ip> <port> [config]'.format(str(argv[0]))
+    print 'Usage: {0} <local ip> <local port> <global ip> <global port> [config]'.format(str(argv[0]))
     print ''
     exit(0)
 

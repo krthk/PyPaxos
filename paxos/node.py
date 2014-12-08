@@ -19,10 +19,10 @@ from log import Log
 
 class Node(threading.Thread):
     
-    def __init__(self, ip, port = 55555, config = 'config2', proposalCompleted = None):
+    def __init__(self, localIP, localPort, globalIP, globalPort, config = 'config', proposalCompleted = None):
         threading.Thread.__init__(self)
         
-        self.addr = (ip, port)
+        self.addr = (globalIP, globalPort)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         # Read config and add the servers to the set
@@ -40,7 +40,7 @@ class Node(threading.Thread):
         # Compute the size of the majority quorum
         self.quorumSize = int(self.numServers/2)+1
         
-        self.log = Log(ip, port)
+        self.log = Log(localIP, localPort)
     
         # Use a set to maintain gaps with finished Paxos rounds. The next Paxos round will be the
         # smallest item in the set. If the set is empty, then it is highestRound
@@ -60,7 +60,7 @@ class Node(threading.Thread):
         
         self.proposalCompleted = proposalCompleted
     
-        self.messagePump = MessagePump(self.queue, self.msgReceived, owner = self, port = self.addr[1])
+        self.messagePump = MessagePump(self.queue, self.msgReceived, owner = self, ip = localIP, port = localPort)
         self.messagePump.setDaemon(True)
     
     
